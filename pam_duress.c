@@ -10,6 +10,8 @@
 
 #define byte unsigned char
 
+int iseof;
+
 PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
     return PAM_SUCCESS;
 }
@@ -29,7 +31,11 @@ void hashme(char* plaintext, byte* output)
 byte readHex()
 {
     char c1, c2;
-    scanf("%c%c", &c1, &c2);
+    if(scanf("%c%c", &c1, &c2) == EOF)
+    {
+        iseof = 1;
+        return 0;
+    }
     int X1, X2;
     if(c1 <= '9')
         X1 = c1-'0';
@@ -67,24 +73,24 @@ int Exists(char *concat, byte *hashin)
     int i, j;
     byte X;
     hashme(concat, hashin);
-    int N;
+    int N, cntr=0;
     int flag=0, check;
+    char nl;
+    iseof = 0;
     freopen("/usr/share/duress/hashes", "r", stdin);
-    scanf("%d\n", &N);
-    for(i=1; i<=N; ++i)
+    while(iseof == 0 && cntr < 1000000000)
     {
         check = 1;
         for(j=0; j<SHA256_DIGEST_LENGTH; ++j)
         {
             X = readHex();
-            if((int)hashin[j] != X)
-            {
+            if(hashin[j] != X)
                 check=0;
-            }
         }
         if(check != 0)
             flag = 1;
-        scanf("\n");
+        ++cntr;
+        scanf("%c", &nl);
     }
     fclose(stdin);
     if(flag == 1)
