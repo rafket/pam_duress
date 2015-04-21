@@ -33,11 +33,11 @@ If you want your configuration so that the duress module does not provide authen
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. I will write a script to automatically make entries on this file but for now you can do it manually by obtaining the hash using `echo -n 'yourusernameandpassword' | sha256sum`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
 
 ### Creating a script
 
-Scripts for each hash are located at `/usr/share/duress/<hashgoeshere>/script` where this is supposed to be executable by root. Beware that this will be run as root, so many things will not work, while others can be dangerous. Since the permissions under `usr/share/` are `-rw-r--r--`, you need to chmod your scripts so that they become `-rwxr--r--`. I will also write a script for this procedure.
+Scripts for each hash are located at `/usr/share/duress/<hashgoeshere>/script` where this is supposed to be executable by root. Beware that this will be run as root, so many things will not work, while others can be dangerous. Since the permissions under `usr/share/` are `-rw-r--r--`, you need to chmod your scripts so that they become `-rwxr--r--`. This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
 
 ## Compilation
 
