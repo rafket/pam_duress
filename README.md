@@ -7,7 +7,7 @@ This project was inspired by [pam\_confused](https://code.google.com/p/confused/
 ## Configuration
 
 ### common-auth et cetera
-In order to use this module, you need to add it in one of the files in /etc/pam.d/ (for example in common-auth). You need to be carefull on how you will add it so that it works properly. It is recommended that you put it in the primary block, right after the normal authentication module. It catches the last given password so in case the first module returns an authentication error, the authentication token goes right into the pam\_duress module.
+In order to use this module, you need to add it in one of the files in /etc/pam.d/ (for example in common-auth). You need to be careful on how you will add it so that it works properly. It is recommended that you put it in the primary block, right after the normal authentication module. It catches the last given password so in case the first module returns an authentication error, the authentication token goes right into the pam\_duress module.
 Be sure to learn how the pam configuration files are structured so that the module works correctly.
 
 For example, the primary block of my common-auth, before configuring it for this module was:
@@ -33,7 +33,7 @@ If you want your configuration so that the duress module does not provide authen
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatinated and the SHA256 of this user-password concatination is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. I will write a script to automatically make entries on this file but for now you can do it manually by obtaining the hash using `echo -n 'yourusernameandpassword' | sha256sum`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. I will write a script to automatically make entries on this file but for now you can do it manually by obtaining the hash using `echo -n 'yourusernameandpassword' | sha256sum`.
 
 ### Creating a script
 
