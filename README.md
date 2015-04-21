@@ -31,6 +31,8 @@ So I changed these values so that if the first two modules succeed, the duress m
 
 If you want your configuration so that the duress module does not provide authentication, change the return value of `pam_sm_authenticate` to always be `PAM_AUTH_ERR`.
 
+ATTENTION! If you allow authentication using the duress password, you should find a way to hide the fact that this was a duress password, because using it someone may be able to elevate to root permissions and, even if you change the permissions of `/usr/share/duress/hashes`, still be able to find whether you provided a duress password. A way to fix this is to delete (or alter) in your script your `hashes` file. Of course you'll need to rebuild it each time, but given that you'll be in a state of duress, it would be a good idea.
+
 ### Adding a user-password combination
 
 Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
