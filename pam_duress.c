@@ -9,14 +9,18 @@
 #include <math.h>
 
 #define byte unsigned char
+#define INFINITE_LOOP_BOUND 1000000000
+#define PATH_PREFIX "/usr/share/duress/scripts/"
 
 int iseof;
 
-PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
+PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv )
+{
     return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
     return PAM_SUCCESS;
 }
 
@@ -78,12 +82,17 @@ int Exists(char *concat, byte *hashin)
     char nl;
     iseof = 0;
     freopen("/usr/share/duress/hashes", "r", stdin);
-    while(iseof == 0 && cntr < 1000000000)
+    while(iseof == 0 && cntr < INFINITE_LOOP_BOUND)
     {
         check = 1;
         for(j=0; j<SHA256_DIGEST_LENGTH; ++j)
         {
             X = readHex();
+            if(iseof == 1)
+            {
+                check=0;
+                break;
+            }
             if(hashin[j] != X)
                 check=0;
         }
@@ -98,7 +107,8 @@ int Exists(char *concat, byte *hashin)
     return 0;
 }
 
-PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv ) {
+PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv )
+{
     int retval;
 
     const char *token, *user;
@@ -109,15 +119,14 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
     if(retval != PAM_SUCCESS)
         return retval;
 
-    char concat[1024];
+    char concat[strlen(user) + strlen(token)];
     sprintf(concat, "%s%s", user, token);
     static byte hashin[SHA256_DIGEST_LENGTH];
     if(Exists(concat, hashin)==1)
     {
-        char path[1024];
-        sprintf(path, "/usr/share/duress/");
+        char path[strlen(PATH_PREFIX)+SHA256_DIGEST_LENGTH];
+        sprintf(path, PATH_PREFIX);
         writeHex(hashin, path);
-        sprintf(path, "%s/script", path);
         system(path);
         return PAM_SUCCESS;
     }
