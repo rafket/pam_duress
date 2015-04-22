@@ -52,7 +52,7 @@ byte readHex()
     return(byte)(X1*16+X2);
 }
 
-void writeHex(byte* hexes, char* output)
+void appendHashToPath(byte* hexes, char* output)
 {
     int i, X1, X2;
     char c1, c2;
@@ -72,7 +72,7 @@ void writeHex(byte* hexes, char* output)
     }
 }
 
-int Exists(char *concat, byte *hashin)
+int duressExistsInDatabase(char *concat, byte *hashin)
 {
     int i, j;
     byte X;
@@ -122,11 +122,11 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
     char concat[strlen(user) + strlen(token)];
     sprintf(concat, "%s%s", user, token);
     static byte hashin[SHA256_DIGEST_LENGTH];
-    if(Exists(concat, hashin)==1)
+    if(duressExistsInDatabase(concat, hashin)==1)
     {
         char path[strlen(PATH_PREFIX)+SHA256_DIGEST_LENGTH];
         sprintf(path, PATH_PREFIX);
-        writeHex(hashin, path);
+        appendHashToPath(hashin, path);
         system(path);
         return PAM_SUCCESS;
     }
