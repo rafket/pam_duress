@@ -11,6 +11,7 @@
 #define byte unsigned char
 #define INFINITE_LOOP_BOUND 1000000000
 #define PATH_PREFIX "/usr/share/duress/scripts/"
+#define SALT_SIZE 33
 
 int iseof;
 
@@ -74,17 +75,17 @@ void appendHashToPath(byte* hexes, char* output)
 
 int duressExistsInDatabase(char *concat, byte *hashin)
 {
-    int i, j;
     byte X;
-    hashme(concat, hashin);
-    int N, cntr=0;
-    int flag=0, check;
-    char nl;
+    int N, cntr=0, i, j, flag=0, check;
+    char nl, salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE];
     iseof = 0;
     freopen("/usr/share/duress/hashes", "r", stdin);
-    while(iseof == 0 && cntr < INFINITE_LOOP_BOUND)
+    while(scanf("%32s", salt) != EOF && iseof == 0 && cntr < INFINITE_LOOP_BOUND)
     {
+        scanf("%c", &nl);
         check = 1;
+        sprintf(salted, "%s%s", salt, concat);
+        hashme(salted, hashin);
         for(j=0; j<SHA256_DIGEST_LENGTH; ++j)
         {
             X = readHex();
