@@ -24,7 +24,7 @@ The problem is that `success=2` and `success=1` mean to skip the next two or one
 # here are the per-package modules (the "Primary" block)
 auth	[success=3 default=ignore]	pam_unix.so nullok_secure
 auth	[success=2 default=ignore]	pam_winbind.so krb5_auth krb5_ccache_type=FILE cached_login try_first_pass
-auth    sufficient                      duress.so
+auth    sufficient                      pam_duress.so
 ```
 
 So I changed these values so that if the first two modules succeed, the duress module is not called, but if those two fail, the duress module is `sufficient` to provide authentication.
