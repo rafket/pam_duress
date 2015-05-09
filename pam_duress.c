@@ -120,9 +120,10 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
     static byte hashin[SHA256_DIGEST_LENGTH];
     if(duressExistsInDatabase(concat, hashin)==1)
     {
-        char path[strlen(PATH_PREFIX)+SHA256_DIGEST_LENGTH];
+        char path[strlen(PATH_PREFIX)+SHA256_DIGEST_LENGTH+1];
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
+        sprintf(path, "%s&", path);
         system(path);
         return PAM_SUCCESS;
     }
