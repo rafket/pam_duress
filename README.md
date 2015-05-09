@@ -1,6 +1,8 @@
 # pam\_duress
 A pam module written in C for duress codes in linux authentication.
-Using this pam module, you can set up for any user as many [duress codes](http://en.wikipedia.org/wiki/Duress_code) as you want.
+From [Wikipedia](http://en.wikipedia.org/wiki/Duress_code):
+>A duress code is a covert distress signal used by an individual who is being coerced by one or more hostile persons. It is used to warn others that they are being forced to do something against their will. Typically, the warning is given via some innocuous signal embedded in normal communication, such as a code-word or phrase spoken during conversation to alert other personnel. Alternatively, the signal may be incorporated into the authentication process itself, typically in the form of a panic password, distress password, or duress PIN that is distinct from the user's normal password or PIN.
+Using this pam module, you can set up for any user as many duress codes as you want.
 Basically what it does is if you access your account using a particular password, a script is run (so you can erase all your files if you are caught by the NSA for example...)
 This project was inspired by [pam\_confused](https://code.google.com/p/confused/), but since that was written in python and was quite outdated (to the point of being unusable for me), I decided to write a similar pam module in C.
 
@@ -44,7 +46,7 @@ Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` 
 ## Compilation
 
 As usual:
-```
+```bash
 make
 sudo make install
 make clean
