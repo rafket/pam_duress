@@ -11,7 +11,7 @@ else
             if [ $hsh == $hash ]
                 then
                     cp $3 /usr/share/duress/scripts/$hash
-                    chmod 754 /usr/share/duress/scripts/$hash
+                    chmod 744 /usr/share/duress/scripts/$hash
             fi
         done < "/usr/share/duress/hashes"
 fi
