@@ -11,7 +11,7 @@
 #define byte unsigned char
 #define INFINITE_LOOP_BOUND 1000000000
 #define PATH_PREFIX "/usr/share/duress/scripts/"
-#define SALT_SIZE 33
+#define SALT_SIZE 16
 
 PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv )
 {
@@ -83,7 +83,7 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE];
 
     freopen("/usr/share/duress/hashes", "r", stdin);
-    while(scanf("%32s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
+    while(scanf("%16s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
         check = 1;
         sprintf(salted, "%s%s", salt, concat);
