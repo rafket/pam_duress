@@ -13,7 +13,7 @@ install: pam_duress.c
 	fi
 	if [ ! -e /usr/share/duress/scripts ]; then \
 		mkdir /usr/share/duress/scripts; \
-		chmod 744 /usr/share/duress/scripts; \
+		chmod -R 745 /usr/share/duress/scripts; \
 	fi
 clean:
 	rm pam_duress.o
