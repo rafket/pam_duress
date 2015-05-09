@@ -43,7 +43,7 @@ Each user can have as many duress passwords as he/she wants, and each one with a
 
 ### Creating a script
 
-Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this is supposed to be executable by root. Beware that this will be run as root, so many things will not work, while others can be dangerous. Since the permissions under `usr/share/` are `-rw-r--r--`, you need to chmod your scripts so that they become `-rwxr--r--`. This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
+Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this will be executable by *anyone*. This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
 
 ## Compilation
 
