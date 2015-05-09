@@ -43,7 +43,9 @@ Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` 
 
 ## Compilation
 
+As usual:
 ```
-gcc -fPIC -fno-stack-protector -c -I/usr/local/ssl/include pam_duress.c
-sudo gcc -shared pam_duress.o -o /lib/security/pam_duress.so -L/usr/local/ssl/lib -lcrypto
+make
+sudo make install
+make clean
 ```
