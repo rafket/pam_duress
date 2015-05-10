@@ -57,16 +57,17 @@ make clean
 ## TL;DR
 
 1. Download source and get into its directory.
-2.
+
+2. Install pam\_duress:
 ```bash
 make
 sudo make install
 make clean
 ```
 3. Edit /etc/pam.d/common-auth and add `auth sufficient pam_duress.so` at the end of the primary block. Make sure that on failure of the above protocols it is run, and on success it is not.
-4.
+4. Set your username, password and duress script:
 ```bash
 sudo bash ./adduser.sh username password
 sudo bash ./adduser.sh username password /path/to/script
 ```
-(Replace 'username' with your username, 'password' with your password and '/path/to/script' with the absolute or relative path to your script.
+(Replace 'username' with your username, 'password' with your password and '/path/to/script' with the absolute or relative path to your script.)
