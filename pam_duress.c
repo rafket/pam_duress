@@ -21,12 +21,12 @@ void hashme(char* plaintext, byte* output)
     SHA256_Final(output, &sha256);
 }
 
-byte readHex()
+byte readHex(FILE*hashes)
 {
     char c1, c2;
     int X1, X2;
 
-    if(scanf("%c%c", &c1, &c2) == EOF)
+    if(fscanf(hashes, "%c%c", &c1, &c2) == EOF)
         return 0;
 
     if(c1 <= '9')
@@ -72,15 +72,15 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     int N, cntr=0, i, j, flag=0, check;
     char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE], nl;
 
-    freopen("/usr/share/duress/hashes", "r", stdin);
-    while(scanf("%16s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
+    FILE*hashes=fopen("/usr/share/duress/hashes", "r");
+    while(fscanf(hashes, "%16s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
         check = 1;
         sprintf(salted, "%s%s", salt, concat);
         hashme(salted, hashin);
         for(j=0; j<SHA256_DIGEST_LENGTH; ++j)
         {
-            X = readHex();
+            X = readHex(hashes);
             if(hashin[j] != X)
                 check=0;
         }
@@ -90,9 +90,9 @@ int duressExistsInDatabase(char *concat, byte *hashin)
             break;
         }
         ++cntr;
-        scanf("\n");
+        fscanf(hashes, "\n");
     }
-    fclose(stdin);
+    fclose(hashes);
     return flag == 1;
 }
 
