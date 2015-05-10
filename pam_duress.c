@@ -13,16 +13,6 @@
 #define PATH_PREFIX "/usr/share/duress/scripts/"
 #define SALT_SIZE 16
 
-PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv )
-{
-    return PAM_SUCCESS;
-}
-
-PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv)
-{
-    return PAM_SUCCESS;
-}
-
 void hashme(char* plaintext, byte* output)
 {
     SHA256_CTX sha256;
@@ -80,7 +70,7 @@ int duressExistsInDatabase(char *concat, byte *hashin)
 {
     byte X;
     int N, cntr=0, i, j, flag=0, check;
-    char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE];
+    char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE], nl;
 
     freopen("/usr/share/duress/hashes", "r", stdin);
     while(scanf("%16s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
@@ -95,7 +85,10 @@ int duressExistsInDatabase(char *concat, byte *hashin)
                 check=0;
         }
         if(check != 0)
+        {
             flag = 1;
+            break;
+        }
         ++cntr;
         scanf("\n");
     }
