@@ -1,11 +1,13 @@
 # pam\_duress
-A pam module written in C for duress codes in Linux authentication.
+A pam module written in C that provides a duress password functionality in Linux authentication.
+
+Basically, a duress code is a fake password that allows the user to issue commands to his computer during login without an observer noticing. The user just has to enter his duress password (that he has set beforehand) and then an alarm is sent than can trigger a variety of actions (for example a mail could be automatically sent from his computer to a rescuer, a script could delete sensitive files in his hard-disk or a certain Rick Astley song could be appropriately played). A situation (albeit somewhat extreme) where this could be useful is described in Cory Doctorow's wonderful book "Little Brother", where the protagonist is forced to provide his credentials to an evil organization, but manages to fool them using a duress password to hide his files.
+
 From [Wikipedia](http://en.wikipedia.org/wiki/Duress_code):
 
 >A duress code is a covert distress signal used by an individual who is being coerced by one or more hostile persons. It is used to warn others that they are being forced to do something against their will. Typically, the warning is given via some innocuous signal embedded in normal communication, such as a code-word or phrase spoken during conversation to alert other personnel. Alternatively, the signal may be incorporated into the authentication process itself, typically in the form of a panic password, distress password, or duress PIN that is distinct from the user's normal password or PIN.
 
 Using this pam module, you can set up for any user as many duress codes as you want.
-Basically what it does is if you access your account using a particular password, a script is run (so you can erase all your files if you are caught by the NSA for example...)
 This project was inspired by [pam\_confused](https://code.google.com/p/confused/), but since that was written in python and was quite outdated (to the point of being unusable for me), I decided to write a similar pam module in C.
 
 ## Configuration
