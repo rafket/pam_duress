@@ -46,6 +46,10 @@ Each user can have as many duress passwords as he/she wants, and each one with a
 
 Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this will be executable by root only. Beware that this gives your script root priviledges (and with great power comes great responsibility). This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
 
+### Deleting a user-password combination
+
+To delete a user-password that you created with `adduser.sh`, use the `deluser.sh` script. Specifically, `sudo bash ./deluser.sh username password` deletes the user-password combination from `/usr/share/duress/hashes` as well as the associated script from `/usr/share/duress/scripts/`. For example, if your username is `foo` and your password is `bar`, you should type `sudo bash ./deluser.sh foo bar`.
+
 ## Compilation
 
 As usual:
