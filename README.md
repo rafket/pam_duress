@@ -1,5 +1,5 @@
 # pam\_duress
-A pam module written in C for duress codes in linux authentication.
+A pam module written in C for duress codes in Linux authentication.
 From [Wikipedia](http://en.wikipedia.org/wiki/Duress_code):
 
 >A duress code is a covert distress signal used by an individual who is being coerced by one or more hostile persons. It is used to warn others that they are being forced to do something against their will. Typically, the warning is given via some innocuous signal embedded in normal communication, such as a code-word or phrase spoken during conversation to alert other personnel. Alternatively, the signal may be incorporated into the authentication process itself, typically in the form of a panic password, distress password, or duress PIN that is distinct from the user's normal password or PIN.
@@ -40,11 +40,11 @@ ATTENTION! If you allow authentication using the duress password, you should fin
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on startup. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
 
 ### Creating a script
 
-Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this will be executable by root only. Beware that this gives your script root priviledges (and with great power comes great responsibility). This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
+Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this will be executable by root only. Beware that this gives your script root privileges (and with great power comes great responsibility). This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
 
 ### Deleting a user-password combination
 
