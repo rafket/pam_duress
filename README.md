@@ -28,13 +28,13 @@ The problem is that `success=2` and `success=1` mean to skip the next two or one
 # here are the per-package modules (the "Primary" block)
 auth	[success=3 default=ignore]	pam_unix.so nullok_secure
 auth	[success=2 default=ignore]	pam_winbind.so krb5_auth krb5_ccache_type=FILE cached_login try_first_pass
-auth    [success=1 default=ignore]      pam_duress.so
+auth    [success=1 default=ignore]      pam_duress.so allow
 
 ```
 
-So I changed these values so that if the first two modules succeed, the duress module is not called, but if those two fail, the duress module is `sufficient` to provide authentication.
+So I changed these values so that if the first two modules succeed, the duress module is not called, but if those two fail, the duress module is called, and if it succeeds it skips the next line and allows authentication.
 
-If you want your configuration so that the duress module does not provide authentication, change the return value of `pam_sm_authenticate` to always be `PAM_AUTH_ERR`.
+If you want to provide authentication when the duress password is entered, make sure the argument after the duress module is `allow`. Otherwise, use `disallow`.
 
 ATTENTION! If you allow authentication using the duress password, you should find a way to hide the fact that this was a duress password, because using it someone may be able to elevate to root permissions and, even if you change the permissions of `/usr/share/duress/hashes`, still be able to find whether you provided a duress password. A way to fix this is to delete (or alter) in your script your `hashes` file. Of course you'll need to rebuild it each time, but given that you'll be in a state of duress, it would be a good idea.
 

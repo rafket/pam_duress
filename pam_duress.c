@@ -98,13 +98,28 @@ int duressExistsInDatabase(char *concat, byte *hashin)
 
 PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv )
 {
-    int retval;
+    int retval, pam_retval;
+    if(argc != 1)
+    {
+        printf("Problem in pam_duress installation! Please add exactly one argument after the duress module!\n");
+        return PAM_AUTH_ERR;
+    }
+
+    if(strcmp(argv[0], "disallow") == 0)
+        pam_retval = PAM_AUTH_ERR;
+    else if(strcmp(argv[0], "allow") == 0)
+        pam_retval = PAM_SUCCESS;
+    else
+    {
+        printf("Unknown argument in pam_duress module!\n");
+        return PAM_AUTH_ERR;
+    }
 
     const char *token, *user;
-    retval = pam_get_authtok(pamh, PAM_AUTHTOK, &token, "Password: ");
+    retval = pam_get_authtok(pamh, PAM_AUTHTOK, &token, "Enter password: ");
     if(retval != PAM_SUCCESS)
         return retval;
-    retval = pam_get_user(pamh, &user, "Username: ");
+    retval = pam_get_user(pamh, &user, "Enter username: ");
     if(retval != PAM_SUCCESS)
         return retval;
 
@@ -118,7 +133,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         appendHashToPath(hashin, path);
         sprintf(path, "%s&", path);
         system(path);
-        return PAM_SUCCESS;
+        return pam_retval;
     }
 
     return PAM_AUTH_ERR;
