@@ -71,6 +71,6 @@ make clean
 * Set your username, password and duress script:
 ```bash
 sudo bash ./adduser.sh username password
-sudo bash ./adduser.sh username password /path/to/script
+sudo bash ./cpyscript.sh username password /path/to/script
 ```
 (Replace 'username' with your username, 'password' with your password and '/path/to/script' with the absolute or relative path to your script.)
