@@ -29,27 +29,6 @@ void byte2string(byte *in, char *out)
         sprintf(out, "%s%02x", out, in[i]);
 }
 
-byte readHex(FILE*hashes)
-{
-    char c1, c2;
-    int X1, X2;
-
-    if(fscanf(hashes, "%c%c", &c1, &c2) == EOF)
-        return 0;
-
-    if(c1 <= '9')
-        X1 = c1-'0';
-    else
-        X1 = c1-'a'+10;
-
-    if(c2 <= '9')
-        X2 = c2-'0';
-    else
-        X2 = c2-'a'+10;
-
-    return(byte)(X1*16+X2);
-}
-
 void appendHashToPath(byte* hexes, char* output)
 {
     char hash[2*SHA256_DIGEST_LENGTH + 1];
