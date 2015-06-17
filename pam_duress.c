@@ -21,6 +21,14 @@ void hashme(char* plaintext, byte* output)
     SHA256_Final(output, &sha256);
 }
 
+void byte2string(byte *in, char *out)
+{
+    int i;
+    out[0] = '\0';
+    for(i=0; i<SHA256_DIGEST_LENGTH; ++i)
+        sprintf(out, "%s%02x", out, in[i]);
+}
+
 byte readHex(FILE*hashes)
 {
     char c1, c2;
@@ -44,33 +52,16 @@ byte readHex(FILE*hashes)
 
 void appendHashToPath(byte* hexes, char* output)
 {
-    int i, X1, X2;
-    char c1, c2;
-
-    for(i=0; i<SHA256_DIGEST_LENGTH; ++i)
-    {
-        X1 = (((int)hexes[i])/16);
-        X2 = ((int)hexes[i])%16;
-
-        if(X1 <= 9)
-            c1 = X1 + '0';
-        else
-            c1 = X1 + 'a' - 10;
-
-        if(X2 <= 9)
-            c2 = X2 + '0';
-        else
-            c2 = X2 + 'a' - 10;
-
-        sprintf(output, "%s%c%c", output, c1, c2);
-    }
+    char hash[2*SHA256_DIGEST_LENGTH];
+    byte2string(hexes, hash);
+    sprintf(output, "%s%s", output, hash);
 }
 
 int duressExistsInDatabase(char *concat, byte *hashin)
 {
     byte X;
     int N, cntr=0, i, j, flag=0, check;
-    char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE], nl;
+    char salt[SALT_SIZE], salted[strlen(concat)+SALT_SIZE], hashstr[SHA256_DIGEST_LENGTH*2], readhash[SHA256_DIGEST_LENGTH*2];
 
     FILE*hashes=fopen("/usr/share/duress/hashes", "r");
     while(fscanf(hashes, "%16s:", salt) != EOF && cntr < INFINITE_LOOP_BOUND)
@@ -78,6 +69,7 @@ int duressExistsInDatabase(char *concat, byte *hashin)
         check = 1;
         sprintf(salted, "%s%s", salt, concat);
         hashme(salted, hashin);
+
         for(j=0; j<SHA256_DIGEST_LENGTH; ++j)
         {
             X = readHex(hashes);
@@ -123,12 +115,19 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
     if(retval != PAM_SUCCESS)
         return retval;
 
-    char concat[strlen(user) + strlen(token)];
-    sprintf(concat, "%s%s", user, token);
+    static byte userhash[SHA256_DIGEST_LENGTH];
+    hashme((char*)user, userhash);
+    char userhsh[SHA256_DIGEST_LENGTH*2];
+
+    byte2string(userhash, userhsh);
+
+    char concat[2*SHA256_DIGEST_LENGTH + strlen(token)];
+    sprintf(concat, "%s%s", (const char*)userhsh, token);
     static byte hashin[SHA256_DIGEST_LENGTH];
+
     if(duressExistsInDatabase(concat, hashin)==1)
     {
-        char path[strlen(PATH_PREFIX)+SHA256_DIGEST_LENGTH+1];
+        char path[strlen(PATH_PREFIX)+2*SHA256_DIGEST_LENGTH+1];
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
         sprintf(path, "%s&", path);
