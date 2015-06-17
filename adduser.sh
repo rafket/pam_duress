@@ -4,6 +4,9 @@ if [ $# -ne 2 ]
         echo 'Usage: adduser.sh username password';
 else
         salt=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 16 | head -n 1)
-        hash=$((echo -n $salt$1$2 | sha256sum) | sed 's/  -//g')
+        userhash=$(echo -n $1 | sha256sum | sed 's/  -//g')
+        hash=$(echo -n $salt$userhash$2 | sha256sum | sed 's/  -//g')
+        echo "concat is " $userhash$2
+        echo "hash is " $hash
         echo $salt:$hash >> /usr/share/duress/hashes
 fi

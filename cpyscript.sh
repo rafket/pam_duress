@@ -7,7 +7,8 @@ else
         do
             salt=${line%:*}
             hsh=${line##*:}
-            hash=$((echo -n $salt$1$2 | sha256sum) | sed 's/  -//g')
+            userhash=$(echo -n $1 | sha256sum | sed 's/  -//g')
+            hash=$(echo -n $salt$userhash$2 | sha256sum | sed 's/  -//g')
             if [ $hsh == $hash ]
                 then
                     cp $3 /usr/share/duress/scripts/$hash
