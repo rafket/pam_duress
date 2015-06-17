@@ -40,7 +40,7 @@ ATTENTION! If you allow authentication using the duress password, you should fin
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated and the SHA256 of this user-password concatenation is written in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated (after the username is hashed) and the SHA256 hash of this user-password concatenation is stored in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
 
 ### Creating a script
 
