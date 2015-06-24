@@ -49,13 +49,11 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
 
     EVP_DecryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, key, iv);
 
-    while(1)
+    while(inlen=fread(inbuf, 1, 1024, in), inlen > 0)
     {
-        inlen = fread(inbuf, 1, 1024, in);
-        if(inlen <= 0)
-            break;
         if(!EVP_DecryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
         {
+            fprintf(stderr, "Error in script decryption!\n");
             EVP_CIPHER_CTX_cleanup(&ctx);
             fclose(in);
             fclose(out);
@@ -66,6 +64,7 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
 
     if(!EVP_DecryptFinal_ex(&ctx, outbuf, &outlen))
     {
+        fprintf(stderr, "Error in script decryption!\n");
         EVP_CIPHER_CTX_cleanup(&ctx);
         fclose(in);
         fclose(out);
@@ -124,7 +123,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
     int retval, pam_retval;
     if(argc != 1)
     {
-        printf("Problem in pam_duress installation! Please add exactly one argument after the duress module!\n");
+        fprintf(stderr, "Problem in pam_duress installation! Please add exactly one argument after the duress module!\n");
         return PAM_AUTH_ERR;
     }
 
@@ -134,7 +133,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         pam_retval = PAM_SUCCESS;
     else
     {
-        printf("Unknown argument in pam_duress module!\n");
+        fprintf(stderr, "Unknown argument in pam_duress module!\n");
         return PAM_AUTH_ERR;
     }
 
