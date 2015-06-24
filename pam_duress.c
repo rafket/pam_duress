@@ -6,12 +6,21 @@
 #include <security/pam_ext.h>
 #include <string.h>
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <math.h>
 
 #define byte unsigned char
 #define INFINITE_LOOP_BOUND 1000000000
 #define PATH_PREFIX "/usr/share/duress/scripts/"
 #define SALT_SIZE 16
+
+void byte2string(byte *in, char *out)
+{
+    int i;
+    out[0] = '\0';
+    for(i=0; i<SHA256_DIGEST_LENGTH; ++i)
+        sprintf(out, "%s%02x", out, in[i]);
+}
 
 void hashme(char* plaintext, byte* output)
 {
@@ -21,12 +30,52 @@ void hashme(char* plaintext, byte* output)
     SHA256_Final(output, &sha256);
 }
 
-void byte2string(byte *in, char *out)
+void decrypt(char *input, char *output, char *pass, byte *salt)
 {
-    int i;
-    out[0] = '\0';
-    for(i=0; i<SHA256_DIGEST_LENGTH; ++i)
-        sprintf(out, "%s%02x", out, in[i]);
+    FILE *in=fopen(input, "rb"), *out=fopen(output, "wb");
+    fseek(in, sizeof(byte)*16, SEEK_SET);
+    byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
+    int inlen, outlen;
+    EVP_CIPHER_CTX ctx;
+    byte key[16], iv[16];
+    const EVP_CIPHER *cipher;
+    const EVP_MD *dgst = NULL;
+
+    cipher = EVP_aes_128_cbc();
+    dgst = EVP_sha256();
+    EVP_BytesToKey(cipher, dgst, (const byte *)salt, (byte *) pass, strlen(pass), 1, key, iv);
+
+    EVP_CIPHER_CTX_init(&ctx);
+
+    EVP_DecryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, key, iv);
+
+    while(1)
+    {
+        inlen = fread(inbuf, 1, 1024, in);
+        if(inlen <= 0)
+            break;
+        if(!EVP_DecryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
+        {
+            EVP_CIPHER_CTX_cleanup(&ctx);
+            fclose(in);
+            fclose(out);
+            return;
+        }
+        fwrite(outbuf, 1, outlen, out);
+    }
+
+    if(!EVP_DecryptFinal_ex(&ctx, outbuf, &outlen))
+    {
+        EVP_CIPHER_CTX_cleanup(&ctx);
+        fclose(in);
+        fclose(out);
+        return;
+    }
+
+    fwrite(outbuf, 1, outlen, out);
+    EVP_CIPHER_CTX_cleanup(&ctx);
+    fclose(in);
+    fclose(out);
 }
 
 void appendHashToPath(byte* hexes, char* output)
@@ -38,7 +87,6 @@ void appendHashToPath(byte* hexes, char* output)
 
 int duressExistsInDatabase(char *concat, byte *hashin)
 {
-    byte X;
     int N, cntr=0, i, j;
     char salt[SALT_SIZE+1], salted[strlen(concat) + SALT_SIZE + 1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
 
@@ -59,6 +107,16 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     }
     fclose(hashes);
     return 0;
+}
+
+void readSalt(byte *salt, char *path)
+{
+    FILE *in = fopen(path, "r");
+
+    fseek(in, sizeof(byte)*8, SEEK_SET);
+    fread(salt, 8, 1, in);
+
+    fclose(in);
 }
 
 PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv )
@@ -100,11 +158,15 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 
     if(duressExistsInDatabase(concat, hashin)==1)
     {
+        byte salt[8];
         char path[strlen(PATH_PREFIX) + 2*SHA256_DIGEST_LENGTH + 1];
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
-        sprintf(path, "%s&", path);
-        system(path);
+        readSalt(salt, path);
+        decrypt(path, "/tmp/script", (char *)token, salt);
+        system("chmod 744 /tmp/script");
+        system("/tmp/script&");
+        system("rm /tmp/script");
         return pam_retval;
     }
 
