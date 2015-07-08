@@ -42,15 +42,15 @@ ATTENTION! If you allow authentication using the duress password, you should fin
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated (after the username is hashed) and the SHA256 hash of this user-password concatenation is stored in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You can do this using the script `adduser.sh` by doing `sudo bash ./adduser.sh username password` where you replace `username` with your username and `password` with your password. For example if your username is `foo` and your password is `bar` you should type `sudo bash ./adduser.sh foo bar`.
-
-### Creating a script
-
-Scripts for each hash are located at `/usr/share/duress/scripts/<hashgoeshere>` where this will be executable by root only. Beware that this gives your script root privileges (and with great power comes great responsibility). This can be done using `sudo bash ./cpyscript.sh username password script` where you replace `username` with your username and `password` with the password that you have set as duress password and `script` with the path to your script. For example if your username is `foo`, your password is `bar`, and your script is at `~/script.sh` you should run `sudo bash ./cpyscript.sh foo bar /home/foo/script.sh`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated (after the username is hashed) and the SHA256 hash of this user-password concatenation is stored in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You add a user-password combination, along with a script using the `adduser.sh` script by executing `sudo bash ./adduser.sh username password path` where you replace `username` with your username, `password` with your password and `path` with the path to your script. For example if your username is `foo`, your password is `bar` and your script is `./script.sh` you should type `sudo bash ./adduser.sh foo bar script.sh`.
 
 ### Deleting a user-password combination
 
 To delete a user-password that you created with `adduser.sh`, use the `deluser.sh` script. Specifically, `sudo bash ./deluser.sh username password` deletes the user-password combination from `/usr/share/duress/hashes` as well as the associated script from `/usr/share/duress/scripts/`. For example, if your username is `foo` and your password is `bar`, you should type `sudo bash ./deluser.sh foo bar`.
+
+### Creating decoy user-password combinations
+
+In order to achieve a level of plausible deniability, the user should use this script to create decoy user-password combinations along with scripts, so that nobody can verify that they have actually used the duress module. This is implemented in the `decoyscripts.sh` script, which is used as `sudo bash ./decoyscripts.sh number` where `number` is the desired number of decoy user-password combinations.
 
 ## Compilation
 
@@ -76,7 +76,6 @@ make clean
 
 * Set your username, password and duress script:
 ```bash
-sudo bash ./adduser.sh username password
-sudo bash ./cpyscript.sh username password /path/to/script
+sudo bash ./adduser.sh username password /path/to/script
 ```
-(Replace 'username' with your username, 'password' with your password and '/path/to/script' with the absolute or relative path to your script.)
+(Replace `username` with your username, `password` with your password and `/path/to/script` with the absolute or relative path to your script.)

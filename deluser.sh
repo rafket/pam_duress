@@ -1,5 +1,8 @@
 #!/bin/bash
-if [ $# -ne 2 ]
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root"
+    exit 1
+elif [ $# -ne 2 ]
     then
         echo 'Usage: deluser.sh username password';
 else
