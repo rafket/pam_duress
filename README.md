@@ -10,6 +10,27 @@ From [Wikipedia](http://en.wikipedia.org/wiki/Duress_code):
 Using this pam module, you can set up for any user as many duress codes as you want.
 This project was inspired by [pam\_confused](https://code.google.com/p/confused/), but since that was written in python and was quite outdated (to the point of being unusable for me), I decided to write a similar pam module in C.
 
+## Proof
+
+Both proofs are implemented the same way (the installation does not change), and the only thing that changes is the way that the user uses the module. Because it is supposed to be a duress module, the configuration will refer to the second, unsafe installation with regards to terminology.
+
+### The proofably safe but more difficult and less flexible way
+
+The setup is as follows: Two passwords exist. One is the normal password, the one that your normal installation has. The other is the master password (not a duress password in this case), which could provide deeper access into the system. This second password is set up using the pam\_duress module, and is connected with a script. The user can utilize the first password to normally use his computer and the second one to perform a hidden action (like unlocking a hidden portion of his disk). Passwords and secret information can be securely stored into the script used with the module since it is encrypted using the master password.
+
+#### Security
+
+First of all, the master password has the same level of security as any other password method, since it is salted and hashed when stored. It can safely be claimed then that the master password is just as safe as the normal password that the linux installation has. Therefore, the master password cannot be exploited to gain access to the machine, since it's extremely difficult (impossible at this time in a reasonable amount of time) to crack. Since the hash function (in this case SHA256) is provably safe, this module is by extension also safe. In addition, the contents of the script connected with the master password are also safe (so a secred code can be hardcoded in it), since it is encrypted (AES-128 CBC) using the master password.
+
+#### Plausible deniability
+
+Plausible deniability describes the ability of the user to deny the existence of an element, in this case, the use of a master password. While the mere existence of the installation of this module can be enough to deduce that the user is using it, it is also possible that another user is using the machine. Using the script `decoyscripts.sh`, a user can add decoy scripts that cannot be verified as legitimate or not. The hash function (SHA256), as well as the encryption routine (AES-128 CBC) provably produce an output that is undistinguishable from random. Thus, the random output that `decoyscripts.sh` produces (in fact, the script is the aes encryption of a null file of a certain size and the username and password are chosen at random), is indistinguishable from a legitimate one.
+
+### The unsafe but easy and flexible way
+
+This setup also involves two password. Again, one is the normal password, though this time, this is the password that the user is trying to hide. The other password is the duress password, which will execute a panic script. The panic script can erase the user's data, send an alert signal to some authority, and whatever else the user would need in a panic situation. Obviously this setup does not provide deniability, but it does equally provide security. As in the safe way, this password cannot be cracked and cannot be exploited to gain access to the user's account. However, an adversary having full access to the user's machine, can check whether the password that the user provided to him is not legitimate (since using it he can decrypt the panic script and detect whether it is malicious or not). If, however, the user himself types the password, this installation is equally safe, since his actions can only be verified only after the script is executed (when it's too late for the adversary to accomplish his goal).
+
+
 ## Configuration
 
 ### common-auth
@@ -28,8 +49,8 @@ The problem is that `success=2` and `success=1` mean to skip the next two or one
 
 ```
 # here are the per-package modules (the "Primary" block)
-auth	[success=3 default=ignore]	pam_unix.so nullok_secure
-auth	[success=2 default=ignore]	pam_winbind.so krb5_auth krb5_ccache_type=FILE cached_login try_first_pass
+auth	[success=3 default=ignore]      pam_unix.so nullok_secure
+auth	[success=2 default=ignore]      pam_winbind.so krb5_auth krb5_ccache_type=FILE cached_login try_first_pass
 auth    [success=1 default=ignore]      pam_duress.so allow
 
 ```
