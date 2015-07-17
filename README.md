@@ -48,6 +48,10 @@ Each user can have as many duress passwords as he/she wants, and each one with a
 
 To delete a user-password that you created with `adduser.sh`, use the `deluser.sh` script. Specifically, `sudo bash ./deluser.sh username password` deletes the user-password combination from `/usr/share/duress/hashes` as well as the associated script from `/usr/share/duress/scripts/`. For example, if your username is `foo` and your password is `bar`, you should type `sudo bash ./deluser.sh foo bar`.
 
+### Creating decoy user-password combinations
+
+In order to achieve a level of plausible deniability, the user should use this script to create decoy user-password combinations along with scripts, so that nobody can verify that they have actually used the duress module. This is implemented in the `decoyscripts.sh` script, which is used as `sudo bash ./decoyscripts.sh number` where `number` is the desired number of decoy user-password combinations.
+
 ## Compilation
 
 As usual:
