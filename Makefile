@@ -1,5 +1,7 @@
+SHELL = /bin/bash
 CC = gcc
 CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include
+EDITOR = $${FCEDIT:-$${VISUAL:-$${EDITOR:-nano}}}
 
 pam_duress: pam_duress.c
 	$(CC) $(CFLAGS) pam_duress.c
@@ -20,5 +22,6 @@ install: pam_duress.c
 		mkdir /usr/share/duress/scripts; \
 		chmod -R 700 /usr/share/duress/scripts; \
 	fi
+	$(EDITOR) /etc/pam.d/common-auth;
 clean:
 	rm pam_duress.o
