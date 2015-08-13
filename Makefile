@@ -11,13 +11,14 @@ install: pam_duress.c
 	chmod 744 /lib/security/pam_duress.so
 	if [ ! -e /usr/share/duress ]; then \
 		mkdir /usr/share/duress; \
+                chmod -R 700 /usr/share/duress; \
 	fi
 	if [ ! -e /usr/share/duress/hashes ]; then \
 		touch /usr/share/duress/hashes; \
 	fi
 	if [ ! -e /usr/share/duress/scripts ]; then \
 		mkdir /usr/share/duress/scripts; \
-		chmod -R 745 /usr/share/duress/scripts; \
+		chmod -R 700 /usr/share/duress/scripts; \
 	fi
 clean:
 	rm pam_duress.o
