@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+SHELL := /bin/bash
 CC = gcc
 CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include
 EDITOR = $${FCEDIT:-$${VISUAL:-$${EDITOR:-nano}}}
