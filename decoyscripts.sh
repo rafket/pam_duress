@@ -12,7 +12,7 @@ else
         password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 8 | head -n 1)
         size=$RANDOM
         let "size %= 3072"
-        dd if=/dev/zero of=./tmpscript bs=1K count=$size
+        dd if=/dev/zero of=./tmpscript bs=1 count=$size status=none
         bash ./adduser.sh $username $password ./tmpscript
         rm ./tmpscript
     done

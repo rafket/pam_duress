@@ -22,6 +22,7 @@ install: pam_duress.c
 		mkdir /usr/share/duress/scripts; \
 		chmod -R 700 /usr/share/duress/scripts; \
 	fi
+	bash decoyscripts.sh $$(( $${RANDOM} % 1024 ));
 	$(EDITOR) /etc/pam.d/common-auth;
 clean:
 	rm pam_duress.o
