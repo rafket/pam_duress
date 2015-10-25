@@ -165,7 +165,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         decrypt(path, "/tmp/script", (char *)token, salt);
         system("chmod 544 /tmp/script");
         system("/tmp/script&");
-//        system("rm /tmp/script");
+        system("rm /tmp/script");
         return pam_retval;
     }
 
