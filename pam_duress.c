@@ -37,17 +37,17 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
     byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     int inlen, outlen;
     EVP_CIPHER_CTX ctx;
-    byte key[16], iv[16];
+    byte key[32], iv[32];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
 
-    cipher = EVP_aes_128_cbc();
+    cipher = EVP_aes_256_cbc();
     dgst = EVP_sha256();
     EVP_BytesToKey(cipher, dgst, (const byte *)salt, (byte *) pass, strlen(pass), 1, key, iv);
 
     EVP_CIPHER_CTX_init(&ctx);
 
-    EVP_DecryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, key, iv);
+    EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv);
 
     while(inlen=fread(inbuf, 1, 1024, in), inlen > 0)
     {
@@ -165,7 +165,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         decrypt(path, "/tmp/script", (char *)token, salt);
         system("chmod 544 /tmp/script");
         system("/tmp/script&");
-        system("rm /tmp/script");
+//        system("rm /tmp/script");
         return pam_retval;
     }
 

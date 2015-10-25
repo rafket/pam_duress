@@ -12,5 +12,5 @@ else
         echo $salt:$hash >> /usr/share/duress/hashes
 
         encsalt=$(cat /dev/urandom | tr -dc 'A-F0-9' | fold -w 16 | head -n 1)
-        openssl aes128 -in $3 -out /usr/share/duress/scripts/$hash -k $2 -md sha256 -S $encsalt
+        openssl aes256 -in $3 -out /usr/share/duress/scripts/$hash -k $2 -md sha256 -S $encsalt
 fi
