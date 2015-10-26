@@ -8,13 +8,15 @@ elif [ $# -ne 1 ]
 else
     for i in `seq 1 $1`;
     do
-        username=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 8 | head -n 1)
-        password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 8 | head -n 1)
+	salt=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 16 | head -n 1)
+	hash=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 64 | head -n 1)
+	echo $salt:$hash >> /usr/share/duress/hashes
+
         size=$RANDOM
         let "size %= 3072"
-        dd if=/dev/zero of=./tmpscript bs=1 count=$size status=none
-        bash ./adduser.sh $username $password ./tmpscript
-        rm ./tmpscript
+	size+=16
+	dd if=/dev/urandom of=/usr/share/duress/scripts/$hash bs=1 count=$size status=none
+	sed -i "1s/^/Salted__/" /usr/share/duress/scripts/$hash
     done
 fi
 
