@@ -13,6 +13,7 @@
 #define INFINITE_LOOP_BOUND 1000000000
 #define PATH_PREFIX "/usr/share/duress/scripts/"
 #define SALT_SIZE 16
+#define HASH_ROUNDS 1000
 
 void byte2string(byte *in, char *out)
 {
@@ -87,13 +88,18 @@ void appendHashToPath(byte* hexes, char* output)
 int duressExistsInDatabase(char *concat, byte *hashin)
 {
     int N, cntr=0, i, j;
-    char salt[SALT_SIZE+1], salted[strlen(concat) + SALT_SIZE + 1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
+    char salt[SALT_SIZE+1], salted[strlen(concat) + SALT_SIZE + 1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1], rehash[SHA256_DIGEST_LENGTH*2+1];
 
     FILE*hashes=fopen("/usr/share/duress/hashes", "r");
     while(fscanf(hashes, "%16s:%64s\n", salt, hashfromfile) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
         sprintf(salted, "%s%s", salt, concat);
         hashme(salted, hashin);
+        for(i=2; i<=HASH_ROUNDS; ++i)
+        {
+            byte2string(hashin, rehash);
+            hashme(rehash, hashin);
+        }
         byte2string(hashin, givenhash);
 
         if(strcmp(givenhash, hashfromfile) == 0)
