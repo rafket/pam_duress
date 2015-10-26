@@ -10,7 +10,10 @@ install: pam_duress.c
 		mkdir /lib/security; \
 	fi
 	$(CC) -shared pam_duress.o -o /lib/security/pam_duress.so -L/usr/local/ssl/lib -lcrypto; \
-	chmod 744 /lib/security/pam_duress.so
+	chmod 744 /lib/security/pam_duress.so;
+	chmod +x ./adduser.sh;
+	chmod +x ./decoyscripts.sh;
+	chmod +x ./deluser.sh;
 	if [ ! -e /usr/share/duress ]; then \
 		mkdir /usr/share/duress; \
                 chmod -R 700 /usr/share/duress; \
@@ -21,8 +24,8 @@ install: pam_duress.c
 	if [ ! -e /usr/share/duress/scripts ]; then \
 		mkdir /usr/share/duress/scripts; \
 		chmod -R 700 /usr/share/duress/scripts; \
+		bash decoyscripts.sh $$(( $${RANDOM} % 128 )); \
 	fi
-	bash decoyscripts.sh $$(( $${RANDOM} % 1024 ));
 	$(EDITOR) /etc/pam.d/common-auth;
 clean:
 	rm pam_duress.o
