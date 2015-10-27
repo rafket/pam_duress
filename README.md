@@ -63,11 +63,11 @@ ATTENTION! If you allow authentication using the duress password, you should fin
 
 ### Adding a user-password combination
 
-Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated (after the username is hashed) and the SHA256 hash of this user-password concatenation is stored in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You add a user-password combination, along with a script using the `adduser.sh` script by executing `sudo ./adduser.sh username password path` where you replace `username` with your username, `password` with your password and `path` with the path to your script. For example if your username is `foo`, your password is `bar` and your script is `./script.sh` you should type `sudo ./adduser.sh foo bar script.sh`.
+Each user can have as many duress passwords as he/she wants, and each one with a different script to be run on login. Each user/password combination is concatenated (after the username is hashed) and the SHA256 hash of this user-password concatenation is stored in `/usr/share/duress/hashes`. The structure of this file is a hash in hexadecimal format per line. You add a user-password combination, along with a script using the `adduser` command by executing `sudo ./adduser username password path` where you replace `username` with your username, `password` with your password and `path` with the path to your script. For example if your username is `foo`, your password is `bar` and your script is `./script.sh` you should type `sudo ./adduser foo bar script.sh`.
 
 ### Deleting a user-password combination
 
-To delete a user-password that you created with `adduser.sh`, use the `deluser.sh` script. Specifically, `sudo ./deluser.sh username password` deletes the user-password combination from `/usr/share/duress/hashes` as well as the associated script from `/usr/share/duress/scripts/`. For example, if your username is `foo` and your password is `bar`, you should type `sudo ./deluser.sh foo bar`.
+To delete a user-password that you created with `adduser`, use the `deluser.sh` script. Specifically, `sudo ./deluser.sh username password` deletes the user-password combination from `/usr/share/duress/hashes` as well as the associated script from `/usr/share/duress/scripts/`. For example, if your username is `foo` and your password is `bar`, you should type `sudo ./deluser.sh foo bar`.
 
 ### Creating decoy user-password combinations
 
@@ -97,6 +97,6 @@ make clean
 
 * Set your username, password and duress script:
 ```bash
-sudo ./adduser.sh username password /path/to/script
+sudo ./adduser username password /path/to/script
 ```
 (Replace `username` with your username, `password` with your password and `/path/to/script` with the absolute or relative path to your script.)
