@@ -65,7 +65,6 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
             fclose(out);
             return;
         }
-        printf("outlen: %d\n", outlen);
         fwrite(outbuf, 1, outlen, out);
     }
 
@@ -99,7 +98,6 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     FILE*hashes=fopen("/usr/share/duress/hashes", "r");
     while(fscanf(hashes, "%16s:%64s\n", salt, hashfromfile) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
-//        sprintf(salted, "%s%s", salt, concat);
         pbkdf2hash(concat, salt, hashin);
         byte2string(hashin, givenhash);
 
