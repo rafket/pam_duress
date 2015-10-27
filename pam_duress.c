@@ -23,12 +23,17 @@ void byte2string(byte *in, char *out)
         sprintf(out, "%s%02x", out, in[i]);
 }
 
-void hashme(char* plaintext, byte* output)
+void sha256hash(char* plaintext, byte* output)
 {
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, plaintext, strlen(plaintext));
     SHA256_Final(output, &sha256);
+}
+
+void pbkdf2hash(char* pass, char* salt, byte* output)
+{
+    PKCS5_PBKDF2_HMAC(pass, strlen(pass), salt, strlen(salt), HASH_ROUNDS, EVP_sha256(), 32, output);
 }
 
 void decrypt(char *input, char *output, char *pass, byte *salt)
@@ -60,6 +65,7 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
             fclose(out);
             return;
         }
+        printf("outlen: %d\n", outlen);
         fwrite(outbuf, 1, outlen, out);
     }
 
@@ -93,13 +99,8 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     FILE*hashes=fopen("/usr/share/duress/hashes", "r");
     while(fscanf(hashes, "%16s:%64s\n", salt, hashfromfile) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
-        sprintf(salted, "%s%s", salt, concat);
-        hashme(salted, hashin);
-        for(i=2; i<=HASH_ROUNDS; ++i)
-        {
-            byte2string(hashin, rehash);
-            hashme(rehash, hashin);
-        }
+//        sprintf(salted, "%s%s", salt, concat);
+        pbkdf2hash(concat, salt, hashin);
         byte2string(hashin, givenhash);
 
         if(strcmp(givenhash, hashfromfile) == 0)
@@ -152,7 +153,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         return retval;
 
     static byte userhash[SHA256_DIGEST_LENGTH];
-    hashme((char*)user, userhash);
+    sha256hash((char*)user, userhash);
     char userhsh[SHA256_DIGEST_LENGTH*2 + 1];
 
     byte2string(userhash, userhsh);
@@ -171,7 +172,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         decrypt(path, "/tmp/script", (char *)token, salt);
         system("chmod 544 /tmp/script");
         system("/tmp/script&");
-        system("rm /tmp/script");
+//        system("rm /tmp/script");
         return pam_retval;
     }
 
