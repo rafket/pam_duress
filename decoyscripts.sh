@@ -13,9 +13,9 @@ else
 	echo $salt:$hash >> /usr/share/duress/hashes
 
         size=$RANDOM
-        let "size %= 3072"
+        let "size %= 10240"
 	size+=16
-	dd if=/dev/urandom of=/usr/share/duress/scripts/$hash bs=1 count=$size status=none
+	openssl rand -out /usr/share/duress/scripts/$hash -rand /dev/urandom $size
 	sed -i "1s/^/Salted__/" /usr/share/duress/scripts/$hash
     done
 fi
