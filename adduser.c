@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
 #include <security/pam_ext.h>
@@ -12,7 +14,6 @@
 
 #define byte unsigned char
 #define SALT_SIZE 16
-#define HASH_ROUNDS 1000
 
 char SALT_CHARS[65];
 
@@ -48,46 +49,25 @@ void genSalt(char* salt, int maxchar)
     salt[SALT_SIZE]='\0';
 }
 
-int main(int argc, char* argv[])
+void Usage(char *name)
 {
-    if(geteuid() != 0)
-    {
-        printf("This must be run as root\n");
-        return 0;
-    }
-    if(argc!=4)
-    {
-        printf("Usage: %s username password path\n", argv[0]);
-        return 0;
-    }
+    printf("Usage: %s username password path [-r path] [-s salt]\n  Creates an entry for a user-password combination, encrypts the given script binary and copies it to the database\n  username: The username of the account\n  password: The password of the account\n  path: The path to the action to be executed (i.e. in the form of a script)\n  -r path (optional): After execution replace the encrypted action entry with an alternative (encrypted) entry located at path (works only for bash scripts)\n  -s salt (optional): Do not generate random salt but use the one given for password hashing (not recommended)\n", name);
+}
 
-    sprintf(SALT_CHARS, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ./");
-    char pass_salt[SALT_SIZE+1], enc_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], script_path[sizeof("usr/share/duress/scripts/")+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1];
-    static byte userhash[SHA256_DIGEST_LENGTH], pass_hash[SHA256_DIGEST_LENGTH];
-    byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
-    int inlen, outlen, i;
+void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
+{
     EVP_CIPHER_CTX ctx;
-    byte key[32], iv[32];
+    byte key[32], iv[32], tmpsalt[SALT_SIZE/2], inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
-
-    sha256hash(argv[1], userhash);
-    byte2string(userhash, userhsh);
-    sprintf(concat, "%s%s", (const char*)userhsh, (const char*)argv[2]);
-    genSalt(pass_salt, 64);
-    genSalt(enc_salt, 16);
-
-    pbkdf2hash(concat, pass_salt, pass_hash);
-    byte2string(pass_hash, str_pass_hash);
-
-    sprintf(script_path, "/usr/share/duress/scripts/%s", str_pass_hash);
+    char enc_salt[SALT_SIZE+1];
+    int i, inlen, outlen;
+    fprintf(out, "Salted__");
 
     cipher = EVP_aes_256_cbc();
     dgst = EVP_sha256();
-    FILE *in=fopen(argv[3], "rb"), *out=fopen(script_path, "wb");
-    fprintf(out, "Salted__");
+    genSalt(enc_salt, 16);
 
-    byte tmpsalt[SALT_SIZE/2];
     for(i=0; i<SALT_SIZE/2; ++i)
     {
         if(enc_salt[2*i]>='a')
@@ -101,7 +81,8 @@ int main(int argc, char* argv[])
     }
     fwrite(tmpsalt, 8, 1, out);
 
-    EVP_BytesToKey(cipher, dgst, (const byte *)tmpsalt, (byte *) argv[2], strlen(argv[2]), 1, key, iv);
+
+    EVP_BytesToKey(cipher, dgst, (const byte*)tmpsalt, pass, passlen, 1, key, iv);
     EVP_CIPHER_CTX_init(&ctx);
     EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv);
 
@@ -109,28 +90,146 @@ int main(int argc, char* argv[])
     {
         if(!EVP_EncryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
         {
-            fprintf(stderr, "Error in script encryption!\n");
+            fprintf(stderr, "Error in action encryption!\n");
             EVP_CIPHER_CTX_cleanup(&ctx);
             fclose(in);
             fclose(out);
-            return 0;
+            exit(0);
         }
         fwrite(outbuf, 1, outlen, out);
     }
 
     if(!EVP_EncryptFinal_ex(&ctx, outbuf, &outlen))
     {
-        fprintf(stderr, "Error in script decryption!\n");
+        fprintf(stderr, "Error in action encryption!\n");
         EVP_CIPHER_CTX_cleanup(&ctx);
         fclose(in);
         fclose(out);
-        return 0;
+        exit(0);
     }
 
     fwrite(outbuf, 1, outlen, out);
     EVP_CIPHER_CTX_cleanup(&ctx);
-    fclose(in);
-    fclose(out);
+}
+
+int main(int argc, char* argv[])
+{
+    if(geteuid() != 0)
+    {
+        printf("This must be run as root\n");
+        return 0;
+    }
+
+    char pass_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], action_path[sizeof("usr/share/duress/actions/")+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1], *username, *password, *path, *rPath;
+    static byte userhash[SHA256_DIGEST_LENGTH], pass_hash[SHA256_DIGEST_LENGTH];
+    int outlen, i, replace=0, gotsalt=0, cnt=0;
+
+    for(i=1; i<argc; ++i)
+    {
+        if(argv[i][0]=='-' && argv[i][1]=='r')
+        {
+            replace=1;
+            if(i==argc-1)
+            {
+                Usage(argv[0]);
+                return 0;
+            }
+            rPath=argv[i+1];
+            ++i;
+        }
+        else if(argv[i][0]=='-' && argv[i][1]=='s')
+        {
+            gotsalt=1;
+            if(i==argc-1)
+            {
+                Usage(argv[0]);
+                return 0;
+            }
+            if(strlen(argv[i+1])!=SALT_SIZE)
+            {
+                Usage(argv[0]);
+                return 0;
+            }
+            strcpy(pass_salt, argv[i+1]);
+        }
+        else
+        {
+            if(cnt==0)
+                username=argv[i];
+            else if(cnt==1)
+                password=argv[i];
+            else if(cnt==2)
+                path=argv[i];
+            else
+            {
+                Usage(argv[0]);
+                return 0;
+            }
+            ++cnt;
+        }
+    }
+
+    if(cnt<3)
+    {
+        Usage(argv[0]);
+        return 0;
+    }
+
+    sprintf(SALT_CHARS, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ./");
+
+    sha256hash(username, userhash);
+    byte2string(userhash, userhsh);
+    sprintf(concat, "%s%s", (const char*)userhsh, (const char*)password);
+    if(!gotsalt)
+        genSalt(pass_salt, 64);
+
+    pbkdf2hash(concat, pass_salt, pass_hash);
+    byte2string(pass_hash, str_pass_hash);
+
+    sprintf(action_path, "/usr/share/duress/actions/%s", str_pass_hash);
+
+    if(replace)
+    {
+        FILE *in=fopen(path, "rb");
+        FILE *out=fopen("/tmp/action", "wb");
+
+        char buf[1024];
+        size_t size;
+
+        while(size=fread(buf, 1, 1024, in))
+            fwrite(buf, 1, size, out);
+
+        fprintf(out, "\nsudo sed '1,/<<REPLACE/d;1,/<<REPLACE/d;/REPLACE/,$d' /tmp/action | head -c -1 > %s\n", action_path);
+
+        fclose(in);
+        in=fopen(rPath, "rb");
+
+        fprintf(out, "\n<<REPLACE\n");
+        Encrypt(in, out, (byte *)password, strlen(password));
+        fclose(in);
+        fprintf(out, "\nREPLACE\n");
+        fclose(out);
+
+        in=fopen("/tmp/action", "rb");
+        out=fopen(action_path, "wb");
+
+        Encrypt(in, out, (byte *)password, strlen(password));
+
+        fclose(in);
+        fclose(out);
+
+        unlink("/tmp/action");
+    }
+    else
+    {
+        FILE *in=fopen(path, "rb");
+        FILE *out=fopen(action_path, "wb");
+        Encrypt(in, out, (byte *)password, strlen(password));
+        fclose(in);
+        fclose(out);
+    }
+
+    chmod(action_path, strtol("0777", 0, 8));
 
     FILE *hashes=fopen("/usr/share/duress/hashes", "a");
     fprintf(hashes, "%s:%s\n", pass_salt, str_pass_hash);

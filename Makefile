@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CC = gcc
-CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include
+CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include -DHASH_ROUNDS=1000
 EDITOR = $${FCEDIT:-$${VISUAL:-$${EDITOR:-nano}}}
 
 pam_duress: pam_duress.c adduser.c
@@ -17,14 +17,14 @@ install: pam_duress.c adduser.c
 	chmod +x ./deluser.sh; \
 	if [ ! -e /usr/share/duress ]; then \
 		mkdir /usr/share/duress; \
-                chmod -R 700 /usr/share/duress; \
+                chmod -R 777 /usr/share/duress; \
 	fi
 	if [ ! -e /usr/share/duress/hashes ]; then \
 		touch /usr/share/duress/hashes; \
 	fi
-	if [ ! -e /usr/share/duress/scripts ]; then \
-		mkdir /usr/share/duress/scripts; \
-		chmod -R 700 /usr/share/duress/scripts; \
+	if [ ! -e /usr/share/duress/actions ]; then \
+		mkdir /usr/share/duress/actions; \
+		chmod -R 777 /usr/share/duress/actions; \
 		bash decoyscripts.sh $$(( $${RANDOM} % 128 )); \
 	fi
 	$(EDITOR) /etc/pam.d/common-auth;

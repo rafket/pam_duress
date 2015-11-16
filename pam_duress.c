@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
 #include <security/pam_ext.h>
@@ -11,9 +14,8 @@
 
 #define byte unsigned char
 #define INFINITE_LOOP_BOUND 1000000000
-#define PATH_PREFIX "/usr/share/duress/scripts/"
+#define PATH_PREFIX "/usr/share/duress/actions/"
 #define SALT_SIZE 16
-#define HASH_ROUNDS 1000
 
 void byte2string(byte *in, char *out)
 {
@@ -59,7 +61,7 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
     {
         if(!EVP_DecryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
         {
-            fprintf(stderr, "Error in script decryption!\n");
+            fprintf(stderr, "Error in action decryption!\n");
             EVP_CIPHER_CTX_cleanup(&ctx);
             fclose(in);
             fclose(out);
@@ -70,7 +72,7 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
 
     if(!EVP_DecryptFinal_ex(&ctx, outbuf, &outlen))
     {
-        fprintf(stderr, "Error in script decryption!\n");
+        fprintf(stderr, "Error in action decryption!\n");
         EVP_CIPHER_CTX_cleanup(&ctx);
         fclose(in);
         fclose(out);
@@ -123,7 +125,7 @@ void readSalt(byte *salt, char *path)
     fclose(in);
 }
 
-PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv )
+PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, const char **argv )
 {
     int retval, pam_retval;
     if(argc != 1)
@@ -167,10 +169,14 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
         readSalt(salt, path);
-        decrypt(path, "/tmp/script", (char *)token, salt);
-        system("chmod 544 /tmp/script");
-        system("/tmp/script&");
-        system("rm /tmp/script");
+        decrypt(path, "/tmp/action", (char *)token, salt);
+        chmod("/tmp/action", strtol("0544", 0, 8));
+        pid_t pid=fork();
+        if(pid==0)
+        {
+            execl("/tmp/action", "action", NULL, NULL);
+            unlink("/tmp/action");
+        }
         return pam_retval;
     }
 

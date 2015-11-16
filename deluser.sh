@@ -1,10 +1,10 @@
 #!/bin/bash
 if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root"
+    echo "This action must be run as root"
     exit 1
 elif [ $# -ne 2 ]
     then
-        echo 'Usage: deluser.sh username password';
+        echo -e "Usage: deluser.sh username password\n  Deletes a user-password-action combination from the database\n  username: The username of the account that the entry was created for\n  password: The password of the account of the user above";
 else
     ln=1
     found=0
@@ -25,6 +25,8 @@ else
     if [ $found == 1 ]
         then
             sed -i $ln'd' /usr/share/duress/hashes
-            rm /usr/share/duress/scripts/$hash
+            rm /usr/share/duress/actions/$hash
+	else
+	    echo "Not found";
     fi
 fi
