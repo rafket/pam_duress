@@ -27,7 +27,9 @@ install: pam_duress.c adduser.c
 		chmod -R 777 /usr/share/duress/actions; \
 		bash decoyscripts.sh $$(( $${RANDOM} % 128 )); \
 	fi
-	$(EDITOR) /etc/pam.d/common-auth;
+	if  whiptail --yesno "Edit /etc/pam.d/common-auth?" 10 50 ; then \
+		$(EDITOR) /etc/pam.d/common-auth; \
+	fi
 clean:
 	rm pam_duress.o
 	rm adduser.o
