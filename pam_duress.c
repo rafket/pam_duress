@@ -159,15 +159,15 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     if(retval != PAM_SUCCESS)
         return retval;
 
-    static byte userhash[SHA256_DIGEST_LENGTH];
-    sha256hash((char*)user, userhash);
+    byte userhash[SHA256_DIGEST_LENGTH];
+    sha256hash(user, userhash);
     char userhsh[SHA256_DIGEST_LENGTH*2 + 1];
 
     byte2string(userhash, userhsh);
 
     char concat[2*SHA256_DIGEST_LENGTH + strlen(token) + 1];
     sprintf(concat, "%s%s", userhsh, token);
-    static byte hashin[SHA256_DIGEST_LENGTH];
+    byte hashin[SHA256_DIGEST_LENGTH];
 
     if(duressExistsInDatabase(concat, hashin)==1)
     {
@@ -176,7 +176,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
         readSalt(salt, path);
-        decrypt(path, "/tmp/action", (char *)token, salt);
+        decrypt(path, "/tmp/action", token, salt);
         chmod("/tmp/action", strtol("0544", 0, 8));
         pid_t pid=fork();
         if(pid==0)
