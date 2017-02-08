@@ -102,9 +102,7 @@ decrypt(const char *input, const char *output, const char *pass, const byte *sal
 static void
 appendHashToPath(const byte* hexes, char* output)
 {
-    char hash[2*SHA256_DIGEST_LENGTH + 1];
-    byte2string(hexes, hash);
-    sprintf(output, "%s%s", output, hash);
+    byte2string(hexes, output + strlen(output));
 }
 
 static int
