@@ -66,7 +66,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
 
     cipher = EVP_aes_256_cbc();
     dgst = EVP_sha256();
-    EVP_BytesToKey(cipher, dgst, (const byte *)salt, (byte *) pass, strlen(pass), 1, key, iv);
+    EVP_BytesToKey(cipher, dgst, salt, pass, strlen(pass), 1, key, iv);
 
     EVP_CIPHER_CTX_init(&ctx);
 

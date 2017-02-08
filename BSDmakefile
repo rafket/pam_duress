@@ -3,7 +3,7 @@ SRCS=	pam_duress.c
 
 CFLAGS+=-DHASH_ROUNDS=1000
 
-WARNS=	7
+WARNS=	9
 
 DPADD=	${LIBCRYPTO}
 LDADD=	-lcrypto
