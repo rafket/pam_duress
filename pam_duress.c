@@ -6,7 +6,9 @@
 #include <sys/wait.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
+#ifndef SECURITY_OPENPAM_H_INCLUDED /* OpenPAM does not provide pam_ext.h */
 #include <security/pam_ext.h>
+#endif
 #include <string.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
@@ -17,7 +19,16 @@
 #define PATH_PREFIX "/usr/share/duress/actions/"
 #define SALT_SIZE 16
 
-void byte2string(byte *in, char *out)
+#ifndef __unused
+#   ifdef __GNUC__
+#       define __unused __attribute__((__unused__))
+#   else
+#       define __unused
+#   endif
+#endif
+
+static void
+byte2string(const byte *in, char *out)
 {
     int i;
     out[0] = '\0';
@@ -25,7 +36,8 @@ void byte2string(byte *in, char *out)
         sprintf(out, "%s%02x", out, in[i]);
 }
 
-void sha256hash(char* plaintext, byte* output)
+static void
+sha256hash(const char* plaintext, byte* output)
 {
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -33,12 +45,14 @@ void sha256hash(char* plaintext, byte* output)
     SHA256_Final(output, &sha256);
 }
 
-void pbkdf2hash(char* pass, char* salt, byte* output)
+static void
+pbkdf2hash(const char* pass, const char* salt, byte* output)
 {
     PKCS5_PBKDF2_HMAC(pass, strlen(pass), salt, strlen(salt), HASH_ROUNDS, EVP_sha256(), 32, output);
 }
 
-void decrypt(char *input, char *output, char *pass, byte *salt)
+static void
+decrypt(const char *input, const char *output, const char *pass, const byte *salt)
 {
     FILE *in=fopen(input, "rb"), *out=fopen(output, "wb");
     fseek(in, sizeof(byte)*16, SEEK_SET);
@@ -85,17 +99,19 @@ void decrypt(char *input, char *output, char *pass, byte *salt)
     fclose(out);
 }
 
-void appendHashToPath(byte* hexes, char* output)
+static void
+appendHashToPath(const byte* hexes, char* output)
 {
     char hash[2*SHA256_DIGEST_LENGTH + 1];
     byte2string(hexes, hash);
     sprintf(output, "%s%s", output, hash);
 }
 
-int duressExistsInDatabase(char *concat, byte *hashin)
+static int
+duressExistsInDatabase(const char *concat, byte *hashin)
 {
-    int N, cntr=0, i, j;
-    char salt[SALT_SIZE+1], salted[strlen(concat) + SALT_SIZE + 1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1], rehash[SHA256_DIGEST_LENGTH*2+1];
+    int cntr = 0;
+    char salt[SALT_SIZE+1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
 
     FILE*hashes=fopen("/usr/share/duress/hashes", "r");
     while(fscanf(hashes, "%16s:%64s\n", salt, hashfromfile) != EOF && cntr < INFINITE_LOOP_BOUND)
@@ -115,7 +131,8 @@ int duressExistsInDatabase(char *concat, byte *hashin)
     return 0;
 }
 
-void readSalt(byte *salt, char *path)
+static void
+readSalt(byte *salt, const char *path)
 {
     FILE *in = fopen(path, "r");
 
@@ -125,7 +142,8 @@ void readSalt(byte *salt, char *path)
     fclose(in);
 }
 
-PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, const char **argv )
+PAM_EXTERN int
+pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char **argv)
 {
     int retval, pam_retval;
     if(argc != 1)
@@ -152,15 +170,15 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     if(retval != PAM_SUCCESS)
         return retval;
 
-    static byte userhash[SHA256_DIGEST_LENGTH];
-    sha256hash((char*)user, userhash);
+    byte userhash[SHA256_DIGEST_LENGTH];
+    sha256hash(user, userhash);
     char userhsh[SHA256_DIGEST_LENGTH*2 + 1];
 
     byte2string(userhash, userhsh);
 
     char concat[2*SHA256_DIGEST_LENGTH + strlen(token) + 1];
-    sprintf(concat, "%s%s", (const char*)userhsh, token);
-    static byte hashin[SHA256_DIGEST_LENGTH];
+    sprintf(concat, "%s%s", userhsh, token);
+    byte hashin[SHA256_DIGEST_LENGTH];
 
     if(duressExistsInDatabase(concat, hashin)==1)
     {
@@ -169,7 +187,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
         sprintf(path, PATH_PREFIX);
         appendHashToPath(hashin, path);
         readSalt(salt, path);
-        decrypt(path, "/tmp/action", (char *)token, salt);
+        decrypt(path, "/tmp/action", token, salt);
         chmod("/tmp/action", strtol("0544", 0, 8));
         pid_t pid=fork();
         if(pid==0)
