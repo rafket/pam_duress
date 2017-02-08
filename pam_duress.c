@@ -181,7 +181,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
 
     byte salt[8];
     char path[strlen(PATH_PREFIX) + 2*SHA256_DIGEST_LENGTH + 1];
-    char dpath[24];
+    char dpath[32];
     int ofd;
 
     sprintf(path, PATH_PREFIX);
