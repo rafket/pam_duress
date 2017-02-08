@@ -6,6 +6,9 @@
 #include <sys/wait.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
+#ifndef SECURITY_OPENPAM_H_INCLUDED /* OpenPAM does not provide pam_ext.h */
+#include <security/pam_ext.h>
+#endif
 #include <string.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
