@@ -52,9 +52,9 @@ pbkdf2hash(const char* pass, const char* salt, byte* output)
 }
 
 static void
-decrypt(const char *input, const char *output, const char *pass, const byte *salt)
+decrypt(const char *input, int ofd, const char *pass, const byte *salt)
 {
-    FILE *in=fopen(input, "rb"), *out=fopen(output, "wb");
+    FILE *in=fopen(input, "rb"), *out = fdopen(ofd, "wb");
     fseek(in, sizeof(byte)*16, SEEK_SET);
     byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     int inlen, outlen;
@@ -176,23 +176,30 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     strcpy(concat + 2*SHA256_DIGEST_LENGTH, token);
 
 
-    if(duressExistsInDatabase(concat, hashin)==1)
-    {
-        byte salt[8];
-        char path[strlen(PATH_PREFIX) + 2*SHA256_DIGEST_LENGTH + 1];
-        sprintf(path, PATH_PREFIX);
-        appendHashToPath(hashin, path);
-        readSalt(salt, path);
-        decrypt(path, "/tmp/action", token, salt);
-        chmod("/tmp/action", strtol("0544", 0, 8));
-        pid_t pid=fork();
-        if(pid==0)
-        {
-            execl("/tmp/action", "action", NULL, NULL);
-            unlink("/tmp/action");
-        }
-        return pam_retval;
-    }
+    if (duressExistsInDatabase(concat, hashin) == 0)
+        return PAM_AUTH_ERR;
 
-    return PAM_AUTH_ERR;
+    byte salt[8];
+    char path[strlen(PATH_PREFIX) + 2*SHA256_DIGEST_LENGTH + 1];
+    char dpath[24];
+    int ofd;
+
+    sprintf(path, PATH_PREFIX);
+    appendHashToPath(hashin, path);
+    readSalt(salt, path);
+
+    snprintf(dpath, sizeof dpath, "/tmp/action.XXXXX.%s", user);
+    ofd = mkstemps(dpath, strlen(user) + 1);
+    fchmod(ofd, S_IRWXU);
+
+    decrypt(path, ofd, token, salt);
+
+    close(ofd);
+    pid_t pid=fork();
+    if(pid==0)
+    {
+        execl(dpath, "action", NULL, NULL);
+        unlink(dpath);
+    }
+    return pam_retval;
 }
