@@ -20,11 +20,11 @@
 #define SALT_SIZE 16
 
 #ifndef __unused
-#	ifdef __GNUC__
-#		define __unused __attribute__((__unused__))
-#	else
-#		define __unused
-#	endif
+#   ifdef __GNUC__
+#       define __unused __attribute__((__unused__))
+#   else
+#       define __unused
+#   endif
 #endif
 
 static void
