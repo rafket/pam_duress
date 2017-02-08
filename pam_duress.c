@@ -10,6 +10,7 @@
 #include <security/pam_ext.h>
 #endif
 #include <string.h>
+#include <syslog.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <math.h>
@@ -75,7 +76,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
     {
         if(!EVP_DecryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
         {
-            fprintf(stderr, "Error in action decryption!\n");
+            syslog(LOG_WARNING, "Error decrypting %s", input);
             EVP_CIPHER_CTX_cleanup(&ctx);
             fclose(in);
             fclose(out);
@@ -86,7 +87,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
 
     if(!EVP_DecryptFinal_ex(&ctx, outbuf, &outlen))
     {
-        fprintf(stderr, "Error in action decryption!\n");
+        syslog(LOG_WARNING, "Error finalizing decryption of %s", input);
         EVP_CIPHER_CTX_cleanup(&ctx);
         fclose(in);
         fclose(out);
@@ -144,20 +145,21 @@ PAM_EXTERN int
 pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char **argv)
 {
     int retval, pam_retval;
+
     if(argc != 1)
     {
-        fprintf(stderr, "Problem in pam_duress installation! Please add exactly one argument after the duress module!\n");
-        return PAM_AUTH_ERR;
+        syslog(LOG_ERR, "Please use exactly one argument with %s, not %d", __FILE__, argc);
+        return PAM_NO_MODULE_DATA;
     }
 
     if(strcmp(argv[0], "disallow") == 0)
-        pam_retval = PAM_AUTH_ERR;
+        pam_retval = PAM_PERM_DENIED;
     else if(strcmp(argv[0], "allow") == 0)
         pam_retval = PAM_SUCCESS;
     else
     {
-        fprintf(stderr, "Unknown argument in pam_duress module!\n");
-        return PAM_AUTH_ERR;
+        syslog(LOG_ERR, "Unknown argument `%s' given to %s", argv[0], __FILE__);
+        return PAM_NO_MODULE_DATA;
     }
 
     const char *token, *user;
@@ -177,7 +179,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
 
 
     if (duressExistsInDatabase(concat, hashin) == 0)
-        return PAM_AUTH_ERR;
+        return PAM_AUTHINFO_UNAVAIL;
 
     byte salt[8];
     char path[strlen(PATH_PREFIX) + 2*SHA256_DIGEST_LENGTH + 1];
@@ -190,14 +192,26 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
 
     snprintf(dpath, sizeof dpath, "/tmp/action.XXXXX.%s", user);
     ofd = mkstemps(dpath, strlen(user) + 1);
-    fchmod(ofd, S_IRWXU);
+    if (ofd == -1) {
+       syslog(LOG_ERR, "mkstemps failed for %s: %m", dpath);
+       return PAM_SYSTEM_ERR;
+    }
+
+    if (fchmod(ofd, S_IRWXU)) {
+       syslog(LOG_ERR, "chmod failed for %s: %m", dpath);
+       close(ofd);
+       unlink(dpath);
+       return PAM_SYSTEM_ERR;
+    }
 
     decrypt(path, ofd, token, salt);
 
     close(ofd);
-    pid_t pid=fork();
-    if(pid==0)
-    {
+    switch (fork()) {
+    case -1:
+        syslog(LOG_ERR, "fork failed: %m");
+        return PAM_SYSTEM_ERR;
+    case 0:
         execl(dpath, "action", NULL, NULL);
         unlink(dpath);
     }
