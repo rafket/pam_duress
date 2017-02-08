@@ -97,7 +97,7 @@ appendHashToPath(const byte* hexes, char* output)
 }
 
 static int
-duressExistsInDatabase(char *concat, byte *hashin)
+duressExistsInDatabase(const char *concat, byte *hashin)
 {
     int cntr = 0;
     char salt[SALT_SIZE+1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
