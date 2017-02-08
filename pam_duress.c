@@ -163,10 +163,10 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     }
 
     const char *token, *user;
-    retval = pam_get_authtok(pamh, PAM_AUTHTOK, &token, "Enter password: ");
+    retval = pam_get_authtok(pamh, PAM_AUTHTOK, &token, NULL);
     if(retval != PAM_SUCCESS)
         return retval;
-    retval = pam_get_user(pamh, &user, "Enter username: ");
+    retval = pam_get_user(pamh, &user, NULL);
     if(retval != PAM_SUCCESS)
         return retval;
 
