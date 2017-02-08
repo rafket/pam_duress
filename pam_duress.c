@@ -170,15 +170,13 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     if(retval != PAM_SUCCESS)
         return retval;
 
-    byte userhash[SHA256_DIGEST_LENGTH];
-    sha256hash(user, userhash);
-    char userhsh[SHA256_DIGEST_LENGTH*2 + 1];
-
-    byte2string(userhash, userhsh);
-
-    char concat[2*SHA256_DIGEST_LENGTH + strlen(token) + 1];
-    sprintf(concat, "%s%s", userhsh, token);
     byte hashin[SHA256_DIGEST_LENGTH];
+    char concat[2*SHA256_DIGEST_LENGTH + strlen(token) + 1];
+    sha256hash(user, hashin);
+
+    byte2string(hashin, concat);
+    strcpy(concat + 2*SHA256_DIGEST_LENGTH, token);
+
 
     if(duressExistsInDatabase(concat, hashin)==1)
     {
