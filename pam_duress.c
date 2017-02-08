@@ -177,7 +177,6 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     byte2string(hashin, concat);
     strcpy(concat + 2*SHA256_DIGEST_LENGTH, token);
 
-
     if (duressExistsInDatabase(concat, hashin) == 0)
         return PAM_AUTHINFO_UNAVAIL;
 
