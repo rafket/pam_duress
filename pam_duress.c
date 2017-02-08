@@ -31,9 +31,9 @@ static void
 byte2string(const byte *in, char *out)
 {
     int i;
-    out[0] = '\0';
-    for(i=0; i<SHA256_DIGEST_LENGTH; ++i)
-        sprintf(out, "%s%02x", out, in[i]);
+
+    for(i = 0; i < SHA256_DIGEST_LENGTH; i += 1, out += 2)
+        sprintf(out, "%02x", in[i]);
 }
 
 static void
