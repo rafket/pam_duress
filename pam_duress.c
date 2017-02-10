@@ -53,7 +53,8 @@ sha256hash(const char* plaintext, byte* output)
 static void
 pbkdf2hash(const char* pass, const char* salt, byte* output)
 {
-    PKCS5_PBKDF2_HMAC(pass, strlen(pass), salt, strlen(salt), HASH_ROUNDS, EVP_sha256(), 32, output);
+    PKCS5_PBKDF2_HMAC(pass, strlen(pass), (const byte *)salt, strlen(salt),
+        HASH_ROUNDS, EVP_sha256(), 32, output);
 }
 
 static int
@@ -80,7 +81,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
 
     cipher = EVP_aes_256_cbc();
     dgst = EVP_sha256();
-    EVP_BytesToKey(cipher, dgst, salt, pass, strlen(pass), 1, key, iv);
+    EVP_BytesToKey(cipher, dgst, salt, (const byte *)pass, strlen(pass), 1, key, iv);
 
     EVP_CIPHER_CTX_init(&ctx);
 
