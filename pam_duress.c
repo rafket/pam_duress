@@ -17,7 +17,11 @@
 
 #define byte unsigned char
 #define INFINITE_LOOP_BOUND 1000000000
-#define PATH_PREFIX "/usr/share/duress/actions/"
+#ifndef DB_PATH
+#   define DB_PATH "/usr/share/duress"
+#endif
+#define PATH_PREFIX	DB_PATH "/actions"
+#define HASHES_PATH	DB_PATH "/hashes"
 #define SALT_SIZE 16
 
 #ifndef __unused
@@ -52,17 +56,27 @@ pbkdf2hash(const char* pass, const char* salt, byte* output)
     PKCS5_PBKDF2_HMAC(pass, strlen(pass), salt, strlen(salt), HASH_ROUNDS, EVP_sha256(), 32, output);
 }
 
-static void
+static int
 decrypt(const char *input, int ofd, const char *pass, const byte *salt)
 {
-    FILE *in=fopen(input, "rb"), *out = fdopen(ofd, "wb");
-    fseek(in, sizeof(byte)*16, SEEK_SET);
+    FILE *in, *out;
     byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     int inlen, outlen;
     EVP_CIPHER_CTX ctx;
     byte key[32], iv[32];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
+
+    in = fopen(input, "rb");
+    if (in == NULL || fseek(in, sizeof(byte)*16, SEEK_SET) == -1) {
+        syslog(LOG_AUTH|LOG_WARNING, "%s: %m", input);
+        return PAM_NO_MODULE_DATA;
+    }
+    out = fdopen(ofd, "wb");
+    if (out == NULL) {
+        syslog(LOG_AUTH|LOG_WARNING, "manipulating temporary action-file: %m");
+        return PAM_SYSTEM_ERR;
+    }
 
     cipher = EVP_aes_256_cbc();
     dgst = EVP_sha256();
@@ -80,7 +94,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
             EVP_CIPHER_CTX_cleanup(&ctx);
             fclose(in);
             fclose(out);
-            return;
+            return PAM_AUTHTOK_ERR;
         }
         fwrite(outbuf, 1, outlen, out);
     }
@@ -91,13 +105,14 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
         EVP_CIPHER_CTX_cleanup(&ctx);
         fclose(in);
         fclose(out);
-        return;
+        return PAM_AUTHTOK_ERR;
     }
 
     fwrite(outbuf, 1, outlen, out);
     EVP_CIPHER_CTX_cleanup(&ctx);
     fclose(in);
     fclose(out);
+    return PAM_SUCCESS;
 }
 
 static void
@@ -111,8 +126,13 @@ duressExistsInDatabase(const char *concat, byte *hashin)
 {
     int cntr = 0;
     char salt[SALT_SIZE+1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
+    FILE *hashes=fopen(HASHES_PATH, "r");
 
-    FILE*hashes=fopen("/usr/share/duress/hashes", "r");
+    if (hashes == NULL) {
+        syslog(LOG_AUTH|LOG_ERR, "%s: %m", HASHES_PATH);
+        return 0;
+    }
+
     while(fscanf(hashes, "%16s:%64s\n", salt, hashfromfile) != EOF && cntr < INFINITE_LOOP_BOUND)
     {
         pbkdf2hash(concat, salt, hashin);
@@ -135,8 +155,10 @@ readSalt(byte *salt, const char *path)
 {
     FILE *in = fopen(path, "r");
 
-    fseek(in, sizeof(byte)*8, SEEK_SET);
-    fread(salt, 8, 1, in);
+    if (in == NULL ||
+        fseek(in, sizeof(byte)*8, SEEK_SET) == -1 ||
+        fread(salt, 8, 1, in) != 1)
+        syslog(LOG_AUTH|LOG_WARNING, "Reading salt from %s: %m", path);
 
     fclose(in);
 }
@@ -203,9 +225,12 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
        return PAM_SYSTEM_ERR;
     }
 
-    decrypt(path, ofd, token, salt);
-
+    retval = decrypt(path, ofd, token, salt);
     close(ofd);
+
+    if (retval != PAM_SUCCESS)
+        return retval;
+
     switch (fork()) {
     case -1:
         syslog(LOG_AUTH|LOG_ERR, "fork failed: %m");
