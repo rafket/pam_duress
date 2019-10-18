@@ -56,7 +56,7 @@ void Usage(char *name)
 
 void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
 {
-    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX *ctx;
     byte key[32], iv[32], tmpsalt[SALT_SIZE/2], inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
@@ -83,15 +83,22 @@ void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
 
 
     EVP_BytesToKey(cipher, dgst, (const byte*)tmpsalt, pass, passlen, 1, key, iv);
-    EVP_CIPHER_CTX_init(&ctx);
-    EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv);
+    ctx = EVP_CIPHER_CTX_new();
+    if (ctx == NULL) {
+        fprintf(stderr, "Error in action encryption!\n");
+        fclose(in);
+        fclose(out);
+        exit(0);
+    }
+    EVP_CIPHER_CTX_init(ctx);
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
 
     while(inlen=fread(inbuf, 1, 1024, in), inlen > 0)
     {
-        if(!EVP_EncryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
+        if(!EVP_EncryptUpdate(ctx, outbuf, &outlen, inbuf, inlen))
         {
             fprintf(stderr, "Error in action encryption!\n");
-            EVP_CIPHER_CTX_cleanup(&ctx);
+            EVP_CIPHER_CTX_free(ctx);
             fclose(in);
             fclose(out);
             exit(0);
@@ -99,17 +106,17 @@ void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
         fwrite(outbuf, 1, outlen, out);
     }
 
-    if(!EVP_EncryptFinal_ex(&ctx, outbuf, &outlen))
+    if(!EVP_EncryptFinal_ex(ctx, outbuf, &outlen))
     {
         fprintf(stderr, "Error in action encryption!\n");
-        EVP_CIPHER_CTX_cleanup(&ctx);
+        EVP_CIPHER_CTX_free(ctx);
         fclose(in);
         fclose(out);
         exit(0);
     }
 
     fwrite(outbuf, 1, outlen, out);
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX_free(ctx);
 }
 
 int main(int argc, char* argv[])

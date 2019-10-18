@@ -63,7 +63,7 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
     FILE *in, *out;
     byte inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     int inlen, outlen;
-    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX *ctx;
     byte key[32], iv[32];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
@@ -83,16 +83,23 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
     dgst = EVP_sha256();
     EVP_BytesToKey(cipher, dgst, salt, (const byte *)pass, strlen(pass), 1, key, iv);
 
-    EVP_CIPHER_CTX_init(&ctx);
+    ctx = EVP_CIPHER_CTX_new();
+    if (ctx == NULL) {
+        syslog(LOG_AUTH|LOG_WARNING, "Error decrypting %s", input);
+        fclose(in);
+        fclose(out);
+        return PAM_AUTHTOK_ERR;
+    }
+    EVP_CIPHER_CTX_init(ctx);
 
-    EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
 
     while(inlen=fread(inbuf, 1, 1024, in), inlen > 0)
     {
-        if(!EVP_DecryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
+        if(!EVP_DecryptUpdate(ctx, outbuf, &outlen, inbuf, inlen))
         {
             syslog(LOG_AUTH|LOG_WARNING, "Error decrypting %s", input);
-            EVP_CIPHER_CTX_cleanup(&ctx);
+            EVP_CIPHER_CTX_free(ctx);
             fclose(in);
             fclose(out);
             return PAM_AUTHTOK_ERR;
@@ -100,17 +107,17 @@ decrypt(const char *input, int ofd, const char *pass, const byte *salt)
         fwrite(outbuf, 1, outlen, out);
     }
 
-    if(!EVP_DecryptFinal_ex(&ctx, outbuf, &outlen))
+    if(!EVP_DecryptFinal_ex(ctx, outbuf, &outlen))
     {
         syslog(LOG_AUTH|LOG_WARNING, "Error finalizing decryption of %s", input);
-        EVP_CIPHER_CTX_cleanup(&ctx);
+        EVP_CIPHER_CTX_free(ctx);
         fclose(in);
         fclose(out);
         return PAM_AUTHTOK_ERR;
     }
 
     fwrite(outbuf, 1, outlen, out);
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX_free(ctx);
     fclose(in);
     fclose(out);
     return PAM_SUCCESS;
