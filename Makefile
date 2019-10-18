@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CC = gcc
-PREFIX ?= /usr/local
+PREFIX ?= /usr
 CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include -DHASH_ROUNDS=1000 -DDB_PATH='"$(PREFIX)/share/duress"'
 LDFLAGS = -L/usr/local/ssl/lib -lcrypto
 TARGET = $(DESTDIR)$(PREFIX)

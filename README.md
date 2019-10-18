@@ -75,10 +75,14 @@ In order to achieve a level of plausible deniability, the user should use this s
 
 ## Compilation
 
-As usual:
+Dependencies are:
+* OpenSSL runtime for the scripts
+* OpenSSL (>= 1.1) and PAM dev libraries
+
+As usual (default PREFIX is /usr):
 ```bash
-make
-sudo make install
+PREFIX=/usr/local make
+(as root) PREFIX=/usr/local make install
 make clean
 ```
 
@@ -92,6 +96,8 @@ make
 sudo make install
 make clean
 ```
+
+* Launch decoyscripts as root to improve plausible deniability
 
 * Edit /etc/pam.d/common-auth and add `auth sufficient pam_duress.so` at the end of the primary block. Make sure that on failure of the above protocols it is run, and on success it is not.
 
