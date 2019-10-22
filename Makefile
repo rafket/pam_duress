@@ -7,7 +7,7 @@ TARGET = $(DESTDIR)$(PREFIX)
 
 .PHONY: clean install remove
 
-all: adduser pam_duress
+all: adduser deluser pam_duress
 
 pam_duress: pam_duress.c
 	$(CC) $(CFLAGS) pam_duress.c
@@ -17,7 +17,11 @@ adduser: adduser.c
 	$(CC) $(CFLAGS) adduser.c
 	$(CC) $(LDFLAGS) adduser.o -o adduser
 
-install: pam_duress adduser
+deluser: deluser.c
+	$(CC) $(CFLAGS) deluser.c
+	$(CC) $(LDFLAGS) deluser.o -o deluser
+
+install: pam_duress adduser deluser
 	if [ -e "$(TARGET)/lib/x86_64-linux-gnu/security" ]; then \
 		install -m 744 pam_duress.so $(TARGET)/lib/x86_64-linux-gnu/security/pam_duress.so; \
 	else \
@@ -27,7 +31,7 @@ install: pam_duress adduser
 		install -m 744 pam_duress.so $(TARGET)/lib/security/pam_duress.so; \
 	fi
 	install -m 755 decoyscripts.sh $(TARGET)/bin/pam_duress_decoyscripts
-	install -m 755 deluser.sh $(TARGET)/bin/pam_duress_deluser
+	install -m 755 deluser $(TARGET)/bin/pam_duress_deluser
 	install -m 755 adduser $(TARGET)/bin/pam_duress_adduser
 	if [ ! -e $(TARGET)/share/duress ]; then \
 		mkdir $(TARGET)/share/duress; \
