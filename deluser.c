@@ -12,6 +12,12 @@
 #include <openssl/rand.h>
 #include <math.h>
 
+#ifndef DB_PATH
+#   define DB_PATH "/usr/share/duress"
+#endif
+#define PATH_PREFIX	DB_PATH "/actions/"
+#define HASHES_PATH	DB_PATH "/hashes"
+#define HASHES_PATH2	DB_PATH "/hashes.tmp"
 #define byte unsigned char
 #define SALT_SIZE 16
 
@@ -49,7 +55,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    char concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], action_path[sizeof("/usr/share/duress/actions/")+2*SHA256_DIGEST_LENGTH+1], *username, *password;
+    char concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], action_path[sizeof(PATH_PREFIX)+2*SHA256_DIGEST_LENGTH+1], *username, *password;
     static byte userhash[SHA256_DIGEST_LENGTH], hashin[SHA256_DIGEST_LENGTH];
     int i;
     char salt[SALT_SIZE+1], givenhash[SHA256_DIGEST_LENGTH*2 + 1], hashfromfile[SHA256_DIGEST_LENGTH*2 + 1];
@@ -73,11 +79,11 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    FILE *hashes=fopen("/usr/share/duress/hashes", "r");
-    FILE *hashes2=fopen("/usr/share/duress/hashes2", "w");
+    FILE *hashes=fopen(HASHES_PATH, "r");
+    FILE *hashes2=fopen(HASHES_PATH2, "w");
 
     if (hashes == NULL) {
-        printf("%s: %m", "/usr/share/duress/hashes");
+        printf("%s: %m", HASHES_PATH);
         return 0;
     }
 
@@ -93,7 +99,7 @@ int main(int argc, char* argv[])
         if(strcmp(givenhash, hashfromfile) == 0)
         {
             // TODO : supprimer l'entrée
-            sprintf(action_path, "/usr/share/duress/actions/%s", givenhash);
+            sprintf(action_path, "%s%s", PATH_PREFIX, givenhash);
             unlink(action_path);
             fclose(hashes);
             i = 1;
@@ -108,13 +114,13 @@ int main(int argc, char* argv[])
 
     if (i == 1)
     {
-            unlink("/usr/share/duress/hashes");
-            rename("/usr/share/duress/hashes2", "/usr/share/duress/hashes");
+            unlink(HASHES_PATH);
+            rename(HASHES_PATH2, HASHES_PATH);
             printf("Successfuly removed %s\n", username);
     }
     else
     {   
-        unlink("/usr/share/duress/hashes2");
+        unlink(HASHES_PATH2);
         printf("User %s not found\n", username);
     }
     return 0;

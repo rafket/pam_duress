@@ -11,6 +11,11 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <math.h>
+#ifndef DB_PATH
+#   define DB_PATH "/usr/share/duress"
+#endif
+#define PATH_PREFIX	DB_PATH "/actions/"
+#define HASHES_PATH	DB_PATH "/hashes"
 
 #define byte unsigned char
 #define SALT_SIZE 16
@@ -127,7 +132,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    char pass_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], action_path[sizeof("usr/share/duress/actions/")+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1], *username, *password, *path, *rPath;
+    char pass_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], action_path[sizeof(PATH_PREFIX)+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1], *username, *password, *path, *rPath;
     static byte userhash[SHA256_DIGEST_LENGTH], pass_hash[SHA256_DIGEST_LENGTH];
     int outlen, i, replace=0, gotsalt=0, cnt=0;
 
@@ -193,7 +198,7 @@ int main(int argc, char* argv[])
     pbkdf2hash(concat, pass_salt, pass_hash);
     byte2string(pass_hash, str_pass_hash);
 
-    sprintf(action_path, "/usr/share/duress/actions/%s", str_pass_hash);
+    sprintf(action_path, "%s%s", PATH_PREFIX, str_pass_hash);
 
     if(replace)
     {
@@ -238,7 +243,7 @@ int main(int argc, char* argv[])
 
     chmod(action_path, strtol("0777", 0, 8));
 
-    FILE *hashes=fopen("/usr/share/duress/hashes", "a");
+    FILE *hashes=fopen(HASHES_PATH, "a");
     fprintf(hashes, "%s:%s\n", pass_salt, str_pass_hash);
     fclose(hashes);
 

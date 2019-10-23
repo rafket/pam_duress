@@ -20,7 +20,7 @@
 #ifndef DB_PATH
 #   define DB_PATH "/usr/share/duress"
 #endif
-#define PATH_PREFIX	DB_PATH "/actions"
+#define PATH_PREFIX	DB_PATH "/actions/"
 #define HASHES_PATH	DB_PATH "/hashes"
 #define SALT_SIZE 16
 
