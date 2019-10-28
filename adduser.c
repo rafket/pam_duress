@@ -11,6 +11,11 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <math.h>
+#ifndef DB_PATH
+#   define DB_PATH "/usr/share/duress"
+#endif
+#define PATH_PREFIX	DB_PATH "/actions/"
+#define HASHES_PATH	DB_PATH "/hashes"
 
 #define byte unsigned char
 #define SALT_SIZE 16
@@ -56,7 +61,7 @@ void Usage(char *name)
 
 void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
 {
-    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX *ctx;
     byte key[32], iv[32], tmpsalt[SALT_SIZE/2], inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
     const EVP_CIPHER *cipher;
     const EVP_MD *dgst = NULL;
@@ -83,15 +88,22 @@ void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
 
 
     EVP_BytesToKey(cipher, dgst, (const byte*)tmpsalt, pass, passlen, 1, key, iv);
-    EVP_CIPHER_CTX_init(&ctx);
-    EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv);
+    ctx = EVP_CIPHER_CTX_new();
+    if (ctx == NULL) {
+        fprintf(stderr, "Error in action encryption!\n");
+        fclose(in);
+        fclose(out);
+        exit(0);
+    }
+    EVP_CIPHER_CTX_init(ctx);
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
 
     while(inlen=fread(inbuf, 1, 1024, in), inlen > 0)
     {
-        if(!EVP_EncryptUpdate(&ctx, outbuf, &outlen, inbuf, inlen))
+        if(!EVP_EncryptUpdate(ctx, outbuf, &outlen, inbuf, inlen))
         {
             fprintf(stderr, "Error in action encryption!\n");
-            EVP_CIPHER_CTX_cleanup(&ctx);
+            EVP_CIPHER_CTX_free(ctx);
             fclose(in);
             fclose(out);
             exit(0);
@@ -99,17 +111,17 @@ void Encrypt(FILE *in, FILE *out, byte *pass, int passlen)
         fwrite(outbuf, 1, outlen, out);
     }
 
-    if(!EVP_EncryptFinal_ex(&ctx, outbuf, &outlen))
+    if(!EVP_EncryptFinal_ex(ctx, outbuf, &outlen))
     {
         fprintf(stderr, "Error in action encryption!\n");
-        EVP_CIPHER_CTX_cleanup(&ctx);
+        EVP_CIPHER_CTX_free(ctx);
         fclose(in);
         fclose(out);
         exit(0);
     }
 
     fwrite(outbuf, 1, outlen, out);
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX_free(ctx);
 }
 
 int main(int argc, char* argv[])
@@ -120,7 +132,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    char pass_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], action_path[sizeof("usr/share/duress/actions/")+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1], *username, *password, *path, *rPath;
+    char pass_salt[SALT_SIZE+1], concat[2*SHA256_DIGEST_LENGTH + strlen(argv[2]) + 1], userhsh[SHA_DIGEST_LENGTH*2 + 1], action_path[sizeof(PATH_PREFIX)+2*SHA256_DIGEST_LENGTH+1], str_pass_hash[2*SHA256_DIGEST_LENGTH+1], *username, *password, *path, *rPath;
     static byte userhash[SHA256_DIGEST_LENGTH], pass_hash[SHA256_DIGEST_LENGTH];
     int outlen, i, replace=0, gotsalt=0, cnt=0;
 
@@ -186,7 +198,7 @@ int main(int argc, char* argv[])
     pbkdf2hash(concat, pass_salt, pass_hash);
     byte2string(pass_hash, str_pass_hash);
 
-    sprintf(action_path, "/usr/share/duress/actions/%s", str_pass_hash);
+    sprintf(action_path, "%s%s", PATH_PREFIX, str_pass_hash);
 
     if(replace)
     {
@@ -231,7 +243,7 @@ int main(int argc, char* argv[])
 
     chmod(action_path, strtol("0777", 0, 8));
 
-    FILE *hashes=fopen("/usr/share/duress/hashes", "a");
+    FILE *hashes=fopen(HASHES_PATH, "a");
     fprintf(hashes, "%s:%s\n", pass_salt, str_pass_hash);
     fclose(hashes);
 

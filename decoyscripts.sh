@@ -10,13 +10,13 @@ else
     do
 	salt=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9./' | fold -w 16 | head -n 1)
 	hash=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 64 | head -n 1)
-	echo $salt:$hash >> /usr/share/duress/hashes
+	echo $salt:$hash >> ${PREFIX:-'/usr'}/share/duress/hashes
 
         size=$RANDOM
         let "size %= 10240"
 	size+=16
-	openssl rand -out /usr/share/duress/actions/$hash -rand /dev/urandom $size
-	sed -i "1s/^/Salted__/" /usr/share/duress/actions/$hash
+	openssl rand -out ${PREFIX:-'/usr'}/share/duress/actions/$hash -rand /dev/urandom $size
+	sed -i "1s/^/Salted__/" ${PREFIX:-'/usr'}/share/duress/actions/$hash
     done
 fi
 

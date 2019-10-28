@@ -1,35 +1,57 @@
 SHELL := /bin/bash
 CC = gcc
-CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include -DHASH_ROUNDS=1000
-EDITOR = $${FCEDIT:-$${VISUAL:-$${EDITOR:-nano}}}
+PREFIX ?= /usr
+CFLAGS = -fPIC -fno-stack-protector -c -I/usr/local/ssl/include -DHASH_ROUNDS=1000 -DDB_PATH='"$(PREFIX)/share/duress"'
+LDFLAGS = -L/usr/local/ssl/lib -lcrypto
+TARGET = $(DESTDIR)$(PREFIX)
 
-pam_duress: pam_duress.c adduser.c
+.PHONY: clean install remove
+
+all: adduser deluser pam_duress
+
+pam_duress: pam_duress.c
 	$(CC) $(CFLAGS) pam_duress.c
+	$(CC) $(LDFLAGS) -shared pam_duress.o -o pam_duress.so
+
+adduser: adduser.c
 	$(CC) $(CFLAGS) adduser.c
-install: pam_duress.c adduser.c
-	if [ ! -e /lib/security ]; then \
-		mkdir /lib/security; \
+	$(CC) $(LDFLAGS) adduser.o -o adduser
+
+deluser: deluser.c
+	$(CC) $(CFLAGS) deluser.c
+	$(CC) $(LDFLAGS) deluser.o -o deluser
+
+install: pam_duress adduser deluser
+	if [ -e "$(TARGET)/lib/x86_64-linux-gnu/security" ]; then \
+		install -m 744 pam_duress.so $(TARGET)/lib/x86_64-linux-gnu/security/pam_duress.so; \
+	else \
+		if [ ! -e $(TARGET)/lib/security ]; then \
+			mkdir $(TARGET)/lib/security; \
+		fi; \
+		install -m 744 pam_duress.so $(TARGET)/lib/security/pam_duress.so; \
 	fi
-	$(CC) -shared pam_duress.o -o /lib/security/pam_duress.so -L/usr/local/ssl/lib -lcrypto; \
-	$(CC) adduser.o -o adduser -L/usr/local/ssl/lib -lcrypto; \
-	chmod 744 /lib/security/pam_duress.so; \
-	chmod +x ./decoyscripts.sh; \
-	chmod +x ./deluser.sh; \
-	if [ ! -e /usr/share/duress ]; then \
-		mkdir /usr/share/duress; \
-                chmod -R 777 /usr/share/duress; \
+	install -m 755 decoyscripts.sh $(TARGET)/bin/pam_duress_decoyscripts
+	install -m 755 deluser $(TARGET)/bin/pam_duress_deluser
+	install -m 755 adduser $(TARGET)/bin/pam_duress_adduser
+	if [ ! -e $(TARGET)/share/duress ]; then \
+		mkdir $(TARGET)/share/duress; \
+		chmod 777 $(TARGET)/share/duress; \
 	fi
-	if [ ! -e /usr/share/duress/hashes ]; then \
-		touch /usr/share/duress/hashes; \
+	if [ ! -e $(TARGET)/share/duress/hashes ]; then \
+		touch $(TARGET)/share/duress/hashes; \
 	fi
-	if [ ! -e /usr/share/duress/actions ]; then \
-		mkdir /usr/share/duress/actions; \
-		chmod -R 777 /usr/share/duress/actions; \
-		bash decoyscripts.sh $$(( $${RANDOM} % 128 )); \
+	if [ ! -e $(TARGET)/share/duress/actions ]; then \
+		mkdir $(TARGET)/share/duress/actions; \
+		chmod 777 $(TARGET)/share/duress/actions; \
 	fi
-	if  whiptail --yesno "Edit /etc/pam.d/common-auth?" 10 50 ; then \
-		$(EDITOR) /etc/pam.d/common-auth; \
-	fi
+
+remove:
+	[ ! -e $(TARGET)/lib/security/pam_duress.so ] || rm -v  $(TARGET)/lib/security/pam_duress.so
+	[ ! -e $(TARGET)/lib/x86_64-linux-gnu/security/pam_duress.so ] || rm -v  $(TARGET)/lib/x86_64-linux-gnu/security/pam_duress.so
+	rm -v  $(TARGET)/bin/pam_duress_decoyscripts
+	rm -v  $(TARGET)/bin/pam_duress_adduser
+	rm -v  $(TARGET)/bin/pam_duress_deluser
+	rm -vr $(TARGET)/share/duress
+
 clean:
-	rm pam_duress.o
-	rm adduser.o
+	rm -v pam_duress.o pam_duress.so adduser.o adduser
