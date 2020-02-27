@@ -10,7 +10,7 @@ echo "Lets Config a PANIC PASSWORD ;)"
 sleep 2
 
 sudo apt install -y git make build-essential libpam0g-dev libssl1.1 libssl-dev
-git clone https://github.com/hellresistor/pam_duress.git
+git clone https://github.com/Lqp1/pam_duress
 # apt install libcurl4-openssl-dev libpam-cracklib ## check if REALLY needed installed..
 
 cd pam_duress
