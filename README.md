@@ -79,6 +79,11 @@ Dependencies are:
 * OpenSSL runtime for the scripts
 * OpenSSL (>= 1.1) and PAM dev libraries
 
+For Debian/Ubuntu:
+```
+sudo apt install libssl-dev libpam-dev build-essential
+```
+
 As usual (default PREFIX is /usr):
 ```bash
 PREFIX=/usr/local make
