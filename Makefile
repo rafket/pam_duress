@@ -11,15 +11,19 @@ all: adduser deluser pam_duress
 
 pam_duress: pam_duress.c
 	$(CC) $(CFLAGS) pam_duress.c
-	$(CC) $(LDFLAGS) -shared pam_duress.o -o pam_duress.so
+	$(CC) -shared pam_duress.o $(LDFLAGS) -o pam_duress.so
 
-adduser: adduser.c
+adduser.o: adduser.c
 	$(CC) $(CFLAGS) adduser.c
-	$(CC) $(LDFLAGS) adduser.o -o adduser
 
-deluser: deluser.c
+adduser: adduser.o
+	$(CC) adduser.o $(LDFLAGS) -o adduser
+
+deluser.o: deluser.c
 	$(CC) $(CFLAGS) deluser.c
-	$(CC) $(LDFLAGS) deluser.o -o deluser
+
+deluser: deluser.o
+	$(CC) deluser.o $(LDFLAGS) -o deluser
 
 install: pam_duress adduser deluser
 	if [ -e "$(TARGET)/lib/x86_64-linux-gnu/security" ]; then \
@@ -54,4 +58,4 @@ remove:
 	rm -vr $(TARGET)/share/duress
 
 clean:
-	rm -v pam_duress.o pam_duress.so adduser.o adduser
+	rm -v pam_duress.o pam_duress.so adduser.o adduser deluser.o deluser

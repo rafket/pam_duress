@@ -98,7 +98,6 @@ int main(int argc, char* argv[])
 
         if(strcmp(givenhash, hashfromfile) == 0)
         {
-            // TODO : supprimer l'entrée
             sprintf(action_path, "%s%s", PATH_PREFIX, givenhash);
             unlink(action_path);
             fclose(hashes);
@@ -119,7 +118,7 @@ int main(int argc, char* argv[])
             printf("Successfuly removed %s\n", username);
     }
     else
-    {   
+    {
         unlink(HASHES_PATH2);
         printf("User %s not found\n", username);
     }
