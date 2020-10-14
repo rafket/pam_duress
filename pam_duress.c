@@ -228,7 +228,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags __unused, int argc, const char
     appendHashToPath(hashin, path);
     readSalt(salt, path);
 
-    snprintf(dpath, sizeof dpath, "/tmp/action.XXXXX.%s", user);
+    snprintf(dpath, sizeof dpath, "/tmp/action.XXXXXX.%s", user);
     ofd = mkstemps(dpath, strlen(user) + 1);
     if (ofd == -1) {
        syslog(LOG_AUTH|LOG_ERR, "mkstemps failed for %s: %m", dpath);
